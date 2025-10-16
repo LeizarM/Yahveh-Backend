@@ -28,7 +28,7 @@ public class ClienteResource {
     JsonWebToken jwt;
 
     @GET
-    @RolesAllowed({"ADMIN", "VENDEDOR"})
+    @RolesAllowed({"admin", "lim"})
     public Response listarClientes() {
         log.info("Listando clientes - Usuario: {}", jwt.getName());
 
@@ -38,7 +38,7 @@ public class ClienteResource {
 
     @GET
     @Path("/{id}")
-    @RolesAllowed({"ADMIN", "VENDEDOR"})
+    @RolesAllowed({"admin", "lim"})
     public Response buscarCliente(@PathParam("id") Long id) {
         log.info("Buscando cliente {} - Usuario: {}", id, jwt.getName());
 
@@ -47,7 +47,7 @@ public class ClienteResource {
     }
 
     @POST
-    @RolesAllowed({"ADMIN"})
+    @RolesAllowed({"admin"})
     public Response crearCliente(@Valid CrearClienteRequest request) {
         Long codUsuario = jwt.getClaim("codUsuario");
         log.info("Creando cliente - Usuario: {}", jwt.getName());

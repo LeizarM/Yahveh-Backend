@@ -1,20 +1,18 @@
 package com.yahveh.model;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Articulo {
-    private String codArticulo;
-    private Integer codLinea;
-    private String descripcion;
-    private String descripcion2;
+public class Vista {
+
+    private long codVista;
+    private long codVistaPadre;
+    private String direccion;
+    private String titulo;
     private Long audUsuario;
-   // private LocalDateTime audFecha;
 }
