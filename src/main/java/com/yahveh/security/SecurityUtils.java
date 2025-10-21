@@ -9,7 +9,7 @@ public class SecurityUtils {
     /**
      * Obtener el ID del usuario actual desde el JWT
      */
-    public Long getCurrentUserId(JsonWebToken jwt) {
+    public int getCurrentUserId(JsonWebToken jwt) {
         Object claim = jwt.getClaim("codUsuario");
         if (claim == null) {
             throw new IllegalStateException("codUsuario no encontrado en el token");
@@ -17,11 +17,11 @@ public class SecurityUtils {
 
         // Manejar diferentes tipos de retorno
         if (claim instanceof Long) {
-            return (Long) claim;
+            return (int) claim;
         } else if (claim instanceof Number) {
-            return ((Number) claim).longValue();
+            return ((Number) claim).intValue();
         } else {
-            return Long.valueOf(claim.toString());
+            return Integer.parseInt(claim.toString());
         }
     }
 

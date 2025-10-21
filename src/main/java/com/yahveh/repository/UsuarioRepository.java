@@ -40,7 +40,7 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
     /**
      * Buscar usuario por ID
      */
-    public Optional<Usuario> buscarPorId(Long codUsuario) {
+    public Optional<Usuario> buscarPorId(int codUsuario) {
         String sql = "SELECT * FROM p_list_usuario(?, NULL, NULL, NULL, NULL, NULL, NULL, 'L')";
 
         return executeQuerySingle(sql, this::mapUsuario, codUsuario);
@@ -116,7 +116,7 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
     /**
      * Eliminar usuario (soft delete)
      */
-    public Long eliminarUsuario(Long codUsuario, Long audUsuario) {
+    public Long eliminarUsuario(int codUsuario, int audUsuario) {
         String sql = "SELECT p_abm_usuario(?, NULL, NULL, NULL, NULL, NULL, ?, 'D')";
 
         return executeQuerySingle(sql, rs -> rs.getLong(1),
@@ -151,7 +151,7 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
                 .login(rs.getString("login"))
                 .tipoUsuario(rs.getString("tipo_usuario"))
                 .estado(rs.getString("estado"))
-                .audUsuario(rs.getLong("aud_usuario"))
+                .audUsuario(rs.getInt("aud_usuario"))
                 //.audFecha(getLocalDateTime(rs, "aud_fecha"))
                 .build();
     }

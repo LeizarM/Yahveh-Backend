@@ -1,21 +1,18 @@
-package com.yahveh.model;
+package com.yahveh.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Articulo {
-
-    private String codArticulo;
+public class LineaResponse {
     private int codLinea;
-    private String descripcion;
-    private String descripcion2;
+    private String linea;
+    private int totalArticulos;
+    private int articulos_activos;
     private int audUsuario;
-   // private LocalDateTime audFecha;
 }

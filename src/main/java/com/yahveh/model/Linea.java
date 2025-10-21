@@ -5,17 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Articulo {
+public class Linea {
 
-    private String codArticulo;
     private int codLinea;
-    private String descripcion;
-    private String descripcion2;
-    private int audUsuario;
-   // private LocalDateTime audFecha;
+    private String linea;
+    private long audUsuario;
+
 }

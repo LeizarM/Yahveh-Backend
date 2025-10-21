@@ -13,13 +13,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Usuario {
 
-    private Long codUsuario;
-    private Long codEmpleado;
+    private long codUsuario;
+    private long codEmpleado;
     private String login;
     private String password;
     private String tipoUsuario;
     private String estado;
-    private Long audUsuario;
+    private int audUsuario;
     //private LocalDateTime audFecha;
 
 }

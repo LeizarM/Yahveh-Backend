@@ -28,7 +28,7 @@ public class UsuarioService {
                 .collect(Collectors.toList());
     }
 
-    public UsuarioResponse buscarPorId(Long codUsuario) {
+    public UsuarioResponse buscarPorId(int codUsuario) {
         log.info("Buscando usuario con ID: {}", codUsuario);
 
         return usuarioRepository.buscarPorId(codUsuario)
@@ -39,7 +39,7 @@ public class UsuarioService {
     /**
      * Crear nuevo usuario
      */
-    public Long crearUsuario(UsuarioRequest request, Long audUsuario) {
+    public Long crearUsuario(UsuarioRequest request, int audUsuario) {
         log.info("Creando nuevo usuario: {}", request.getLogin());
 
         // Validar que sea una creación
@@ -75,7 +75,7 @@ public class UsuarioService {
     /**
      * Actualizar usuario existente
      */
-    public void actualizarUsuario(Long codUsuario, UsuarioRequest request, Long audUsuario) {
+    public void actualizarUsuario(int codUsuario, UsuarioRequest request, int audUsuario) {
         log.info("Actualizando usuario ID: {}", codUsuario);
 
         // Verificar que existe
@@ -103,7 +103,7 @@ public class UsuarioService {
         log.info("Usuario actualizado exitosamente");
     }
 
-    public void eliminarUsuario(Long codUsuario, Long audUsuario) {
+    public void eliminarUsuario(int codUsuario, int audUsuario) {
         log.info("Eliminando usuario ID: {}", codUsuario);
 
         // Verificar que existe
