@@ -11,16 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ClienteResponse {
-    private Long codCliente;
-    private Long codZona;
-    private String zona;
-    private String nit;
-    private String razonSocial;
-    private String nombreCliente;
-    private String direccion;
-    private String referencia;
-    private String obs;
-    private Integer totalNotas;
+public class PaisResponse {
+    private int codPais;
+    private String pais;
+    private Integer totalCiudades;
     private Integer audUsuario;
 }

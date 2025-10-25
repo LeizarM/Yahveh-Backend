@@ -26,15 +26,12 @@ public class UsuarioResource {
     UsuarioService usuarioService;
 
     @Inject
-    JsonWebToken jwt;
-
-    @Inject
     SecurityUtils securityUtils;
 
     @GET
-    @RolesAllowed({"ADMIN", "admin"})
+    @RolesAllowed({"admin", "lim"})
     public Response listarUsuarios() {
-        log.info("GET /api/usuarios - Usuario: {}", jwt.getName());
+        log.info("GET /api/usuarios - Usuario: {}", securityUtils.getCurrentUsername());
 
         List<UsuarioResponse> usuarios = usuarioService.listarTodos();
         return Response.ok(ApiResponse.success(usuarios)).build();
@@ -42,19 +39,19 @@ public class UsuarioResource {
 
     @GET
     @Path("/{id}")
-    @RolesAllowed({"ADMIN", "admin"})
+    @RolesAllowed({"admin", "lim"})
     public Response buscarUsuario(@PathParam("id") int id) {
-        log.info("GET /api/usuarios/{} - Usuario: {}", id, jwt.getName());
+        log.info("GET /api/usuarios/{} - Usuario: {}", id, securityUtils.getCurrentUsername());
 
         UsuarioResponse usuario = usuarioService.buscarPorId(id);
         return Response.ok(ApiResponse.success(usuario)).build();
     }
 
     @POST
-    @RolesAllowed({"ADMIN", "admin"})
+    @RolesAllowed({"admin", "lim"})
     public Response crearUsuario(@Valid UsuarioRequest request) {
-        int codUsuario = securityUtils.getCurrentUserId(jwt);
-        log.info("POST /api/usuarios - Usuario: {} - Creando: {}", jwt.getName(), request.getLogin());
+        int codUsuario = securityUtils.getCurrentUserId();
+        log.info("POST /api/usuarios - Usuario: {} - Creando: {}", securityUtils.getCurrentUsername(), request.getLogin());
 
         Long nuevoId = usuarioService.crearUsuario(request, codUsuario);
         return Response.status(Response.Status.CREATED)
@@ -64,10 +61,10 @@ public class UsuarioResource {
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed({"ADMIN", "admin"})
+    @RolesAllowed({"admin", "lim"})
     public Response actualizarUsuario(@PathParam("id") int id, @Valid UsuarioRequest request) {
-        int codUsuario = securityUtils.getCurrentUserId(jwt);
-        log.info("PUT /api/usuarios/{} - Usuario: {}", id, jwt.getName());
+        int codUsuario = securityUtils.getCurrentUserId();
+        log.info("PUT /api/usuarios/{} - Usuario: {}", id, securityUtils.getCurrentUsername());
 
         usuarioService.actualizarUsuario(id, request, codUsuario);
         return Response.ok(ApiResponse.success("Usuario actualizado exitosamente", null)).build();
@@ -75,10 +72,10 @@ public class UsuarioResource {
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({"ADMIN", "admin"})
+    @RolesAllowed({"admin", "lim"})
     public Response eliminarUsuario(@PathParam("id") int id) {
-        int codUsuario = securityUtils.getCurrentUserId(jwt);
-        log.info("DELETE /api/usuarios/{} - Usuario: {}", id, jwt.getName());
+        int codUsuario = securityUtils.getCurrentUserId();
+        log.info("DELETE /api/usuarios/{} - Usuario: {}", id, securityUtils.getCurrentUsername());
 
         usuarioService.eliminarUsuario(id, codUsuario);
         return Response.ok(ApiResponse.success("Usuario eliminado exitosamente", null)).build();

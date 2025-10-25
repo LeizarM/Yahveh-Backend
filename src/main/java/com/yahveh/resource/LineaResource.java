@@ -26,9 +26,6 @@ public class LineaResource {
     LineaService lineaService;
 
     @Inject
-    JsonWebToken jwt;
-
-    @Inject
     SecurityUtils securityUtils;
 
     /**
@@ -37,7 +34,7 @@ public class LineaResource {
     @GET
     @RolesAllowed({"lim", "admin" })
     public Response listarLineas() {
-        log.info("GET /api/lineas - Usuario:::: {}", jwt.getName());
+        log.info("GET /api/lineas - Usuario");
 
         List<LineaResponse> lineas = lineaService.listarTodas();
         return Response.ok(ApiResponse.success(lineas)).build();
@@ -50,7 +47,7 @@ public class LineaResource {
     @Path("/{id}")
     @RolesAllowed({"lim", "admin", })
     public Response buscarLinea(@PathParam("id") int id) {
-        log.info("GET /api/lineas/{} - Usuario: {}", id, jwt.getName());
+        log.info("GET /api/lineas/{} - Usuario");
 
         LineaResponse linea = lineaService.buscarPorId(id);
         return Response.ok(ApiResponse.success(linea)).build();
@@ -62,8 +59,8 @@ public class LineaResource {
     @POST
     @RolesAllowed({"lim", "admin"})
     public Response crearLinea(@Valid LineaRequest request) {
-        int codUsuario = securityUtils.getCurrentUserId(jwt);
-        log.info("POST /api/lineas - Usuario: {} - Creando: {}", jwt.getName(), request.getLinea());
+        int codUsuario = securityUtils.getCurrentUserId();
+        log.info("POST /api/lineas - Usuario: {} - Creando: {}", securityUtils.getCurrentUsername(), request.getLinea());
 
         Long nuevoId = lineaService.crearLinea(request, codUsuario);
         return Response.status(Response.Status.CREATED)
@@ -78,8 +75,8 @@ public class LineaResource {
     @Path("/{id}")
     @RolesAllowed({"lim", "admin"})
     public Response actualizarLinea(@PathParam("id") int id, @Valid LineaRequest request) {
-        int codUsuario = securityUtils.getCurrentUserId(jwt);
-        log.info("PUT /api/lineas/{} - Usuario: {}", id, jwt.getName());
+        int codUsuario = securityUtils.getCurrentUserId();
+        log.info("PUT /api/lineas/{} - Usuario: {}", id, securityUtils.getCurrentUsername());
 
         lineaService.actualizarLinea(id, request, codUsuario);
         return Response.ok(ApiResponse.success("Línea actualizada exitosamente", null)).build();

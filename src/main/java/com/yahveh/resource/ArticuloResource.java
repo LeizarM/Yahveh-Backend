@@ -24,10 +24,6 @@ public class ArticuloResource {
 
     @Inject
     ArticuloService articuloService;
-
-    @Inject
-    JsonWebToken jwt;
-
     @Inject
     SecurityUtils securityUtils;
 
@@ -35,9 +31,9 @@ public class ArticuloResource {
      * GET /api/articulos - Listar todos los artículos
      */
     @GET
-    @RolesAllowed({"ADMIN", "admin", "VENDEDOR"})
+    @RolesAllowed({ "admin", "lim"})
     public Response listarArticulos() {
-        log.info("GET /api/articulos - Usuario: {}", jwt.getName());
+        log.info("GET /api/articulos - Usuario: {}", securityUtils.getCurrentUsername());
 
         List<ArticuloResponse> articulos = articuloService.listarTodos();
         return Response.ok(ApiResponse.success(articulos)).build();
@@ -48,9 +44,9 @@ public class ArticuloResource {
      */
     @GET
     @Path("/{codigo}")
-    @RolesAllowed({"ADMIN", "admin", "VENDEDOR"})
+    @RolesAllowed({"admin", "lim"})
     public Response buscarArticulo(@PathParam("codigo") String codigo) {
-        log.info("GET /api/articulos/{} - Usuario: {}", codigo, jwt.getName());
+        log.info("GET /api/articulos/{} - Usuario: {}", codigo, securityUtils.getCurrentUsername());
 
         ArticuloResponse articulo = articuloService.buscarPorCodigo(codigo);
         return Response.ok(ApiResponse.success(articulo)).build();
@@ -61,9 +57,9 @@ public class ArticuloResource {
      */
     @GET
     @Path("/linea/{id}")
-    @RolesAllowed({"ADMIN", "admin", "VENDEDOR"})
+    @RolesAllowed({"lim", "admin"})
     public Response listarPorLinea(@PathParam("id") int id) {
-        log.info("GET /api/articulos/linea/{} - Usuario: {}", id, jwt.getName());
+        log.info("GET /api/articulos/linea/{} - Usuario: {}", id, securityUtils.getCurrentUsername());
 
         List<ArticuloResponse> articulos = articuloService.listarPorLinea(id);
         return Response.ok(ApiResponse.success(articulos)).build();
@@ -74,9 +70,9 @@ public class ArticuloResource {
      */
     @GET
     @Path("/buscar")
-    @RolesAllowed({"ADMIN", "admin", "VENDEDOR"})
+    @RolesAllowed({"lim", "admin"})
     public Response buscarPorDescripcion(@QueryParam("descripcion") String descripcion) {
-        log.info("GET /api/articulos/buscar?descripcion={} - Usuario: {}", descripcion, jwt.getName());
+        log.info("GET /api/articulos/buscar?descripcion={} - Usuario: {}", descripcion, securityUtils.getCurrentUsername());
 
         if (descripcion == null || descripcion.trim().isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -92,10 +88,10 @@ public class ArticuloResource {
      * POST /api/articulos - Crear nuevo artículo
      */
     @POST
-    @RolesAllowed({"ADMIN", "admin"})
+    @RolesAllowed({"lim", "admin"})
     public Response crearArticulo(@Valid ArticuloRequest request) {
-        int codUsuario = securityUtils.getCurrentUserId(jwt);
-        log.info("POST /api/articulos - Usuario: {} - Creando: {}", jwt.getName(), request.getCodArticulo());
+        int codUsuario = securityUtils.getCurrentUserId();
+        log.info("POST /api/articulos - Usuario: {} - Creando: {}", securityUtils.getCurrentUsername(), request.getCodArticulo());
 
         String codArticulo = articuloService.crearArticulo(request, codUsuario);
         return Response.status(Response.Status.CREATED)
@@ -104,16 +100,16 @@ public class ArticuloResource {
     }
 
     /**
-     * PUT /api/articulos/{codigo} - Actualizar artículo
+     * PUT /api/articulos/{codArticulo} - Actualizar artículo
      */
     @PUT
-    @Path("/{codigo}")
-    @RolesAllowed({"ADMIN", "admin"})
-    public Response actualizarArticulo(@PathParam("codigo") String codigo, @Valid ArticuloRequest request) {
-        int codUsuario = securityUtils.getCurrentUserId(jwt);
-        log.info("PUT /api/articulos/{} - Usuario: {}", codigo, jwt.getName());
+    @Path("/{codArticulo}")
+    @RolesAllowed({"lim", "admin"})
+    public Response actualizarArticulo(@PathParam("codArticulo") String codArticulo, @Valid ArticuloRequest request) {
+        int codUsuario = securityUtils.getCurrentUserId();
+        log.info("PUT /api/articulos/{} - Usuario: {}", codArticulo, securityUtils.getCurrentUsername());
 
-        articuloService.actualizarArticulo(codigo, request, codUsuario);
+        articuloService.actualizarArticulo(codArticulo, request, codUsuario);
         return Response.ok(ApiResponse.success("Artículo actualizado exitosamente", null)).build();
     }
 

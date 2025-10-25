@@ -24,9 +24,6 @@ public class VistaResource {
     VistaService vistaService;
 
     @Inject
-    JsonWebToken jwt;
-
-    @Inject
     SecurityUtils securityUtils;
 
     /**
@@ -36,7 +33,7 @@ public class VistaResource {
     @RolesAllowed({"admin", "lim"})
     @Path("/menu")
     public Response listarVistas() {
-        log.info("POST /api/vistas - Usuario: {}", jwt.getName());
+        log.info("POST /api/vistas - Usuario: {}", securityUtils.getCurrentUsername());
 
         List<VistaResponse> vistas = vistaService.listarTodas();
         return Response.ok(ApiResponse.success(vistas)).build();

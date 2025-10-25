@@ -9,14 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Cliente {
-    private long codCliente;
+public class Zona {
     private long codZona;
-    private String nit;
-    private String razonSocial;
-    private String nombreCliente;
-    private String direccion;
-    private String referencia;
-    private String obs;
+    private long codCiudad;
+    private String zona;
     private int audUsuario;
 }

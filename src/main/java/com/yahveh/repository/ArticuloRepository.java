@@ -86,6 +86,9 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
      * Actualizar artículo
      */
     public void actualizarArticulo(Articulo articulo) {
+
+        System.out.println(articulo.toString());
+
         String sql = "SELECT p_abm_articulo(" +
                 "p_codarticulo := ?, " +
                 "p_codlinea := ?, " +
