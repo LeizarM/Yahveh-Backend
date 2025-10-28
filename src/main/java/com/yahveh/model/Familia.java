@@ -1,5 +1,6 @@
 package com.yahveh.model;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,11 +10,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Linea {
+public class Familia {
 
-    private int codLinea;
     private long codFamilia;
-    private String linea;
-    private long audUsuario;
+    private String familia;
+    private int audUsuario;
 
 }

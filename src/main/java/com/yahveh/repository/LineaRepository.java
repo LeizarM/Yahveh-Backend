@@ -1,5 +1,6 @@
 package com.yahveh.repository;
 
+import com.yahveh.dto.response.LineaResponse;
 import com.yahveh.model.Linea;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -12,44 +13,64 @@ import java.util.Optional;
 public class LineaRepository extends BaseRepository<Linea> {
 
     /**
-     * Listar todas las líneas
+     * Listar todas las líneas con información completa
      */
-    public List<Linea> listarTodas() {
-        String sql = "SELECT cod_linea, linea, total_articulos, articulos_activos, aud_usuario " +
+    public List<LineaResponse> listarTodasCompleto() {
+        String sql = "SELECT cod_linea, cod_familia, familia, linea, total_articulos, aud_usuario " +
                 "FROM p_list_linea(p_accion := ?)";
-        return executeQueryList(sql, this::mapLinea, "L");
+        return executeQueryList(sql, this::mapLineaResponse, "L");
     }
 
     /**
-     * Buscar línea por ID
+     * Buscar línea por ID con información completa
+     */
+    public Optional<LineaResponse> buscarPorIdCompleto(int codLinea) {
+        String sql = "SELECT cod_linea, cod_familia, familia, linea, total_articulos, aud_usuario " +
+                "FROM p_list_linea(p_codlinea := ?, p_accion := ?)";
+        return executeQuerySingle(sql, this::mapLineaResponse, codLinea, "L");
+    }
+
+    /**
+     * Listar líneas por familia con información completa
+     */
+    public List<LineaResponse> listarPorFamiliaCompleto(int codFamilia) {
+        String sql = "SELECT cod_linea, cod_familia, familia, linea, total_articulos, aud_usuario " +
+                "FROM p_list_linea(p_codfamilia := ?, p_accion := ?)";
+        return executeQueryList(sql, this::mapLineaResponse, codFamilia, "L");
+    }
+
+    /**
+     * Buscar líneas por nombre con información completa
+     */
+    public List<LineaResponse> buscarPorNombreCompleto(String linea) {
+        String sql = "SELECT cod_linea, cod_familia, familia, linea, total_articulos, aud_usuario " +
+                "FROM p_list_linea(p_linea := ?, p_accion := ?)";
+        return executeQueryList(sql, this::mapLineaResponse, linea, "L");
+    }
+
+    /**
+     * Buscar línea por ID (solo para validaciones)
      */
     public Optional<Linea> buscarPorId(int codLinea) {
-        String sql = "SELECT cod_linea, linea, total_articulos, articulos_activos, aud_usuario " +
+        String sql = "SELECT cod_linea, cod_familia, familia, linea, total_articulos, aud_usuario " +
                 "FROM p_list_linea(p_codlinea := ?, p_accion := ?)";
         return executeQuerySingle(sql, this::mapLinea, codLinea, "L");
     }
 
     /**
-     * Buscar línea por nombre
-     */
-    public List<Linea> buscarPorNombre(String linea) {
-        String sql = "SELECT cod_linea, linea, total_articulos, articulos_activos, aud_usuario " +
-                "FROM p_list_linea(p_linea := ?, p_accion := ?)";
-        return executeQueryList(sql, this::mapLinea, linea, "L");
-    }
-
-    /**
      * Crear nueva línea
      */
-    public Long crearLinea(Linea linea) {
+    public int crearLinea(Linea linea) {
         String sql = "SELECT p_abm_linea(" +
+                "p_codfamilia := ?, " +
                 "p_linea := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
         return executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                rs -> rs.getInt(1),
+                linea.getCodFamilia(),
                 linea.getLinea(),
                 linea.getAudUsuario()
         ).orElseThrow(() -> new RuntimeException("Error al crear línea"));
@@ -61,15 +82,16 @@ public class LineaRepository extends BaseRepository<Linea> {
     public void actualizarLinea(Linea linea) {
         String sql = "SELECT p_abm_linea(" +
                 "p_codlinea := ?, " +
+                "p_codfamilia := ?, " +
                 "p_linea := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'U')";
 
-        // CAMBIO: Usar executeQuerySingle en lugar de executeUpdate
         executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                rs -> rs.getLong(1),
                 linea.getCodLinea(),
+                linea.getCodFamilia(),
                 linea.getLinea(),
                 linea.getAudUsuario()
         ).orElseThrow(() -> new RuntimeException("Error al actualizar línea"));
@@ -78,19 +100,32 @@ public class LineaRepository extends BaseRepository<Linea> {
     /**
      * Eliminar línea
      */
-    public void eliminarLinea(int codLinea, Long audUsuario) {
+    public void eliminarLinea(int codLinea, int audUsuario) {
         String sql = "SELECT p_abm_linea(" +
                 "p_codlinea := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'D')";
 
-        // CAMBIO: Usar executeQuerySingle en lugar de executeUpdate
         executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                rs -> rs.getLong(1),
                 codLinea,
                 audUsuario
         ).orElseThrow(() -> new RuntimeException("Error al eliminar línea"));
+    }
+
+    /**
+     * Mapear ResultSet a LineaResponse
+     */
+    private LineaResponse mapLineaResponse(ResultSet rs) throws SQLException {
+        return LineaResponse.builder()
+                .codLinea(rs.getInt(1))
+                .codFamilia(rs.getLong(2))
+                .familia(rs.getString(3))
+                .linea(rs.getString(4))
+                .totalArticulos(rs.getInt(5))
+                .audUsuario(rs.getInt(6))
+                .build();
     }
 
     /**
@@ -99,8 +134,9 @@ public class LineaRepository extends BaseRepository<Linea> {
     private Linea mapLinea(ResultSet rs) throws SQLException {
         return Linea.builder()
                 .codLinea(rs.getInt(1))
-                .linea(rs.getString(2))
-                .audUsuario(rs.getLong(3))
+                .codFamilia(rs.getLong(2))
+                .linea(rs.getString(3))
+                .audUsuario(rs.getLong(4))
                 .build();
     }
 }

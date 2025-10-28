@@ -11,11 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class LineaResponse {
-    private Integer codLinea;
-    private Long codFamilia;
+public class FamiliaResponse {
+    private long codFamilia;
     private String familia;
-    private String linea;
-    private Integer totalArticulos;
-    private Integer audUsuario;
+    private int totalLineas;
+    private int audUsuario;
 }
