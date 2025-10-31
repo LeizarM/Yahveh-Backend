@@ -1,16 +1,32 @@
 package com.yahveh.repository;
 
 import com.yahveh.dto.response.FamiliaResponse;
+import com.yahveh.exception.BusinessException;
 import com.yahveh.model.Familia;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @ApplicationScoped
 public class FamiliaRepository extends BaseRepository<Familia> {
+
+    /**
+     * Resultado de operación ABM
+     */
+    public static class AbmResult {
+        public int error;
+        public String errorMsg;
+        public int result;
+
+        public boolean isSuccess() {
+            return error == 0;
+        }
+    }
 
     /**
      * Listar todas las familias con información completa
@@ -47,65 +63,76 @@ public class FamiliaRepository extends BaseRepository<Familia> {
     }
 
     /**
-     * Buscar familia por ID (solo para validaciones)
-     */
-    public Optional<Familia> buscarPorId(int codFamilia) {
-        String sql = "SELECT cod_familia, familia, total_lineas, aud_usuario " +
-                "FROM p_list_familia(p_codfamilia := ?, p_accion := ?)";
-        return executeQuerySingle(sql, this::mapFamilia, codFamilia, "L");
-    }
-
-    /**
-     * Crear nueva familia
+     * Crear nueva familia con manejo de errores
      */
     public int crearFamilia(Familia familia) {
-        String sql = "SELECT p_abm_familia(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_familia(" +
                 "p_familia := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
-        return executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                this::mapAbmResult,
                 familia.getFamilia(),
                 familia.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al crear familia"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al crear familia. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        return result.result;
     }
 
     /**
-     * Actualizar familia
+     * Actualizar familia con manejo de errores
      */
     public void actualizarFamilia(Familia familia) {
-        String sql = "SELECT p_abm_familia(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_familia(" +
                 "p_codfamilia := ?, " +
                 "p_familia := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'U')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 familia.getCodFamilia(),
                 familia.getFamilia(),
                 familia.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al actualizar familia"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al actualizar familia. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
     }
 
     /**
-     * Eliminar familia
+     * Eliminar familia con manejo de errores
      */
     public void eliminarFamilia(int codFamilia, int audUsuario) {
-        String sql = "SELECT p_abm_familia(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_familia(" +
                 "p_codfamilia := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'D')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 codFamilia,
                 audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al eliminar familia"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al eliminar familia. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
     }
 
     /**
@@ -121,13 +148,17 @@ public class FamiliaRepository extends BaseRepository<Familia> {
     }
 
     /**
-     * Mapear ResultSet a Familia
+     * Mapear ResultSet a AbmResult
      */
-    private Familia mapFamilia(ResultSet rs) throws SQLException {
-        return Familia.builder()
-                .codFamilia(rs.getLong(1))
-                .familia(rs.getString(2))
-                .audUsuario(rs.getInt(3))
-                .build();
+    private AbmResult mapAbmResult(ResultSet rs) throws SQLException {
+        AbmResult result = new AbmResult();
+        result.error = rs.getInt("p_error");
+        result.errorMsg = rs.getString("p_errormsg");
+
+        // Manejar el caso donde p_result puede ser NULL
+        int resultValue = rs.getInt("p_result");
+        result.result = rs.wasNull() ? null : resultValue;
+
+        return result;
     }
 }

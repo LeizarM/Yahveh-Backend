@@ -39,18 +39,7 @@ public class ArticuloResource {
         return Response.ok(ApiResponse.success(articulos)).build();
     }
 
-    /**
-     * GET /api/articulos/{codigo} - Buscar artículo por código
-     */
-    @GET
-    @Path("/{codigo}")
-    @RolesAllowed({"admin", "lim"})
-    public Response buscarArticulo(@PathParam("codigo") String codigo) {
-        log.info("GET /api/articulos/{} - Usuario: {}", codigo, securityUtils.getCurrentUsername());
 
-        ArticuloResponse articulo = articuloService.buscarPorCodigo(codigo);
-        return Response.ok(ApiResponse.success(articulo)).build();
-    }
 
     /**
      * GET /api/articulos/linea/{id} - Listar artículos por línea
@@ -65,24 +54,7 @@ public class ArticuloResource {
         return Response.ok(ApiResponse.success(articulos)).build();
     }
 
-    /**
-     * GET /api/articulos/buscar?descripcion=xxx - Buscar por descripción
-     */
-    @GET
-    @Path("/buscar")
-    @RolesAllowed({"lim", "admin"})
-    public Response buscarPorDescripcion(@QueryParam("descripcion") String descripcion) {
-        log.info("GET /api/articulos/buscar?descripcion={} - Usuario: {}", descripcion, securityUtils.getCurrentUsername());
 
-        if (descripcion == null || descripcion.trim().isEmpty()) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(ApiResponse.error("El parámetro 'descripcion' es requerido"))
-                    .build();
-        }
-
-        List<ArticuloResponse> articulos = articuloService.buscarPorDescripcion(descripcion);
-        return Response.ok(ApiResponse.success(articulos)).build();
-    }
 
     /**
      * POST /api/articulos - Crear nuevo artículo
@@ -93,7 +65,7 @@ public class ArticuloResource {
         int codUsuario = securityUtils.getCurrentUserId();
         log.info("POST /api/articulos - Usuario: {} - Creando: {}", securityUtils.getCurrentUsername(), request.getCodArticulo());
 
-        String codArticulo = articuloService.crearArticulo(request, codUsuario);
+        int codArticulo = articuloService.crearArticulo(request, codUsuario);
         return Response.status(Response.Status.CREATED)
                 .entity(ApiResponse.success("Artículo creado exitosamente", codArticulo))
                 .build();

@@ -31,14 +31,7 @@ public class ArticuloService {
         return articuloRepository.listarTodosCompleto();
     }
 
-    /**
-     * Buscar artículo por código
-     */
-    public ArticuloResponse buscarPorCodigo(String codArticulo) {
-        log.info("Buscando artículo con código: {}", codArticulo);
-        return articuloRepository.buscarPorCodigoCompleto(codArticulo)
-                .orElseThrow(() -> new NotFoundException("Artículo no encontrado"));
-    }
+
 
     /**
      * Listar artículos por línea
@@ -46,35 +39,19 @@ public class ArticuloService {
     public List<ArticuloResponse> listarPorLinea(int codLinea) {
         log.info("Listando artículos de línea: {}", codLinea);
 
-        // Verificar que la línea existe
-        lineaRepository.buscarPorId(codLinea)
-                .orElseThrow(() -> new NotFoundException("Línea no encontrada"));
+
 
         return articuloRepository.listarPorLineaCompleto(codLinea);
     }
 
-    /**
-     * Buscar artículos por descripción
-     */
-    public List<ArticuloResponse> buscarPorDescripcion(String descripcion) {
-        log.info("Buscando artículos por descripción: {}", descripcion);
-        return articuloRepository.buscarPorDescripcionCompleto(descripcion);
-    }
+
 
     /**
      * Crear nuevo artículo
      */
-    public String crearArticulo(ArticuloRequest request, int audUsuario) {
+    public int crearArticulo(ArticuloRequest request, int audUsuario) {
         log.info("Creando nuevo artículo: {}", request.getCodArticulo());
 
-        // Verificar que la línea existe
-        lineaRepository.buscarPorId(request.getCodLinea())
-                .orElseThrow(() -> new NotFoundException("Línea no encontrada"));
-
-        // Verificar que el código no exista
-        if (articuloRepository.existeArticulo(request.getCodArticulo())) {
-            throw new BusinessException("El código de artículo ya existe");
-        }
 
         Articulo articulo = Articulo.builder()
                 .codArticulo(request.getCodArticulo().toUpperCase().trim())
@@ -84,7 +61,7 @@ public class ArticuloService {
                 .audUsuario(audUsuario)
                 .build();
 
-        String codArticulo = articuloRepository.crearArticulo(articulo);
+        int codArticulo = articuloRepository.crearArticulo(articulo);
 
         log.info("Artículo creado exitosamente: {}", codArticulo);
         return codArticulo;
@@ -95,14 +72,6 @@ public class ArticuloService {
      */
     public void actualizarArticulo(String codArticulo, ArticuloRequest request, int audUsuario) {
         log.info("Actualizando artículo: {}", codArticulo);
-
-        // Verificar que el artículo existe
-        articuloRepository.buscarPorCodigoCompleto(codArticulo)
-                .orElseThrow(() -> new NotFoundException("Artículo no encontrado"));
-
-        // Verificar que la línea existe
-        lineaRepository.buscarPorId(request.getCodLinea())
-                .orElseThrow(() -> new NotFoundException("Línea no encontrada"));
 
         Articulo articulo = Articulo.builder()
                 .codArticulo(codArticulo.toUpperCase().trim())
@@ -120,12 +89,10 @@ public class ArticuloService {
     /**
      * Eliminar artículo
      */
-    public void eliminarArticulo(String codArticulo, Long audUsuario) {
+    public void eliminarArticulo(String codArticulo, int audUsuario) {
         log.info("Eliminando artículo: {}", codArticulo);
 
-        // Verificar que el artículo existe
-        articuloRepository.buscarPorCodigoCompleto(codArticulo)
-                .orElseThrow(() -> new NotFoundException("Artículo no encontrado"));
+
 
         articuloRepository.eliminarArticulo(codArticulo, audUsuario);
 

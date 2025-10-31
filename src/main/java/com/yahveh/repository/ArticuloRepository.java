@@ -1,33 +1,47 @@
 package com.yahveh.repository;
 
 import com.yahveh.dto.response.ArticuloResponse;
+import com.yahveh.exception.BusinessException;
 import com.yahveh.model.Articulo;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @ApplicationScoped
 public class ArticuloRepository extends BaseRepository<Articulo> {
+
+    /**
+     * Resultado de operación ABM
+     */
+    public static class AbmResult {
+        public int error;
+        public String errorMsg;
+        public int result;
+
+        public boolean isSuccess() {
+            return error == 0;
+        }
+    }
 
     /**
      * Listar todos los artículos con información completa
      */
     public List<ArticuloResponse> listarTodosCompleto() {
-        String sql = "SELECT cod_articulo, cod_linea, linea, descripcion, descripcion2, " +
-                "total_stock, precio_actual, aud_usuario " +
+        String sql = "SELECT * " +
                 "FROM p_list_articulo(p_accion := ?)";
         return executeQueryList(sql, this::mapArticuloResponse, "L");
     }
 
     /**
-     * Buscar artículo por código con información completa
+     * Buscar artículo por ID con información completa
      */
-    public Optional<ArticuloResponse> buscarPorCodigoCompleto(String codArticulo) {
-        String sql = "SELECT cod_articulo, cod_linea, linea, descripcion, descripcion2, " +
-                "total_stock, precio_actual, aud_usuario " +
+    public Optional<ArticuloResponse> buscarPorIdCompleto(String codArticulo) {
+        String sql = "SELECT * " +
                 "FROM p_list_articulo(p_codarticulo := ?, p_accion := ?)";
         return executeQuerySingle(sql, this::mapArticuloResponse, codArticulo, "L");
     }
@@ -36,34 +50,35 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
      * Listar artículos por línea con información completa
      */
     public List<ArticuloResponse> listarPorLineaCompleto(int codLinea) {
-        String sql = "SELECT cod_articulo, cod_linea, linea, descripcion, descripcion2, " +
-                "total_stock, precio_actual, aud_usuario " +
+        String sql = "SELECT * " +
                 "FROM p_list_articulo(p_codlinea := ?, p_accion := ?)";
         return executeQueryList(sql, this::mapArticuloResponse, codLinea, "L");
     }
 
     /**
-     * Buscar artículos por descripción con información completa
+     * Listar artículos por familia con información completa
      */
-    public List<ArticuloResponse> buscarPorDescripcionCompleto(String descripcion) {
-        String sql = "SELECT cod_articulo, cod_linea, linea, descripcion, descripcion2, " +
-                "total_stock, precio_actual, aud_usuario " +
-                "FROM p_list_articulo(p_descripcion := ?, p_accion := ?)";
-        return executeQueryList(sql, this::mapArticuloResponse, descripcion, "L");
+    public List<ArticuloResponse> listarPorFamiliaCompleto(int codFamilia) {
+        String sql = "SELECT * " +
+                "FROM p_list_articulo(p_codfamilia := ?, p_accion := ?)";
+        return executeQueryList(sql, this::mapArticuloResponse, codFamilia, "L");
     }
 
     /**
-     * Verificar si existe un artículo (solo para validaciones)
+     * Buscar artículos por nombre con información completa
      */
-    public boolean existeArticulo(String codArticulo) {
-        return buscarPorCodigoCompleto(codArticulo).isPresent();
+    public List<ArticuloResponse> buscarPorNombreCompleto(String articulo) {
+        String sql = "SELECT * " +
+                "FROM p_list_articulo(p_articulo := ?, p_accion := ?)";
+        return executeQueryList(sql, this::mapArticuloResponse, articulo, "L");
     }
 
     /**
-     * Crear nuevo artículo
+     * Crear nuevo artículo con manejo de errores
      */
-    public String crearArticulo(Articulo articulo) {
-        String sql = "SELECT p_abm_articulo(" +
+    public int crearArticulo(Articulo articulo) {
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_articulo(" +
                 "p_codarticulo := ?, " +
                 "p_codlinea := ?, " +
                 "p_descripcion := ?, " +
@@ -71,25 +86,31 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
-        return executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getString(1),
+                this::mapAbmResult,
                 articulo.getCodArticulo(),
                 articulo.getCodLinea(),
                 articulo.getDescripcion(),
                 articulo.getDescripcion2(),
                 articulo.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al crear artículo"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_articulo"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al crear artículo. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Artículo creado exitosamente con ID: {}", result.result);
+        return result.result;
     }
 
     /**
-     * Actualizar artículo
+     * Actualizar artículo con manejo de errores
      */
     public void actualizarArticulo(Articulo articulo) {
-
-        System.out.println(articulo.toString());
-
-        String sql = "SELECT p_abm_articulo(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_articulo(" +
                 "p_codarticulo := ?, " +
                 "p_codlinea := ?, " +
                 "p_descripcion := ?, " +
@@ -97,46 +118,51 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
                 "p_audusuario := ?, " +
                 "p_accion := 'U')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getString(1),
+                this::mapAbmResult,
                 articulo.getCodArticulo(),
                 articulo.getCodLinea(),
                 articulo.getDescripcion(),
                 articulo.getDescripcion2(),
                 articulo.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al actualizar artículo"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_articulo"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al actualizar artículo. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Artículo actualizado exitosamente: {}", articulo.getCodArticulo());
     }
 
     /**
-     * Eliminar artículo
+     * Eliminar artículo con manejo de errores
      */
-    public void eliminarArticulo(String codArticulo, Long audUsuario) {
-        String sql = "SELECT p_abm_articulo(" +
+    public void eliminarArticulo(String codArticulo, int audUsuario) {
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_articulo(" +
                 "p_codarticulo := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'D')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getString(1),
+                this::mapAbmResult,
                 codArticulo,
                 audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al eliminar artículo"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_articulo"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al eliminar artículo. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Artículo eliminado exitosamente: {}", codArticulo);
     }
 
     /**
-     * Mapear ResultSet a ArticuloResponse (con todos los datos del SP)
-     *
-     * Columnas del SP:
-     * 1. cod_articulo (VARCHAR)
-     * 2. cod_linea (INTEGER)
-     * 3. linea (VARCHAR)
-     * 4. descripcion (VARCHAR)
-     * 5. descripcion2 (VARCHAR)
-     * 6. total_stock (INTEGER)
-     * 7. precio_actual (NUMERIC/DOUBLE)
-     * 8. aud_usuario (BIGINT)
+     * Mapear ResultSet a ArticuloResponse
      */
     private ArticuloResponse mapArticuloResponse(ResultSet rs) throws SQLException {
         return ArticuloResponse.builder()
@@ -149,5 +175,20 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
                 .precioActual(rs.getDouble(7))
                 .audUsuario(rs.getInt(8))
                 .build();
+    }
+
+    /**
+     * Mapear ResultSet a AbmResult
+     */
+    private AbmResult mapAbmResult(ResultSet rs) throws SQLException {
+        AbmResult result = new AbmResult();
+        result.error = rs.getInt("p_error");
+        result.errorMsg = rs.getString("p_errormsg");
+
+        // Manejar el caso donde p_result puede ser NULL
+        int resultValue = rs.getInt("p_result");
+        result.result = rs.wasNull() ? null : resultValue;
+
+        return result;
     }
 }

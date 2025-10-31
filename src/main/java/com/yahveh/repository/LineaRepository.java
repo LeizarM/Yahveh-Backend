@@ -1,16 +1,32 @@
 package com.yahveh.repository;
 
 import com.yahveh.dto.response.LineaResponse;
+import com.yahveh.exception.BusinessException;
 import com.yahveh.model.Linea;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @ApplicationScoped
 public class LineaRepository extends BaseRepository<Linea> {
+
+    /**
+     * Resultado de operación ABM
+     */
+    public static class AbmResult {
+        public int error;
+        public String errorMsg;
+        public int result;
+
+        public boolean isSuccess() {
+            return error == 0;
+        }
+    }
 
     /**
      * Listar todas las líneas con información completa
@@ -49,69 +65,80 @@ public class LineaRepository extends BaseRepository<Linea> {
     }
 
     /**
-     * Buscar línea por ID (solo para validaciones)
-     */
-    public Optional<Linea> buscarPorId(int codLinea) {
-        String sql = "SELECT cod_linea, cod_familia, familia, linea, total_articulos, aud_usuario " +
-                "FROM p_list_linea(p_codlinea := ?, p_accion := ?)";
-        return executeQuerySingle(sql, this::mapLinea, codLinea, "L");
-    }
-
-    /**
-     * Crear nueva línea
+     * Crear nueva línea con manejo de errores
      */
     public int crearLinea(Linea linea) {
-        String sql = "SELECT p_abm_linea(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_linea(" +
                 "p_codfamilia := ?, " +
                 "p_linea := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
-        return executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                this::mapAbmResult,
                 linea.getCodFamilia(),
                 linea.getLinea(),
                 linea.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al crear línea"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al crear línea. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        return result.result;
     }
 
     /**
-     * Actualizar línea
+     * Actualizar línea con manejo de errores
      */
     public void actualizarLinea(Linea linea) {
-        String sql = "SELECT p_abm_linea(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_linea(" +
                 "p_codlinea := ?, " +
                 "p_codfamilia := ?, " +
                 "p_linea := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'U')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 linea.getCodLinea(),
                 linea.getCodFamilia(),
                 linea.getLinea(),
                 linea.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al actualizar línea"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al actualizar línea. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
     }
 
     /**
-     * Eliminar línea
+     * Eliminar línea con manejo de errores
      */
     public void eliminarLinea(int codLinea, int audUsuario) {
-        String sql = "SELECT p_abm_linea(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_linea(" +
                 "p_codlinea := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'D')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 codLinea,
                 audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al eliminar línea"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al eliminar línea. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
     }
 
     /**
@@ -129,14 +156,17 @@ public class LineaRepository extends BaseRepository<Linea> {
     }
 
     /**
-     * Mapear ResultSet a Linea
+     * Mapear ResultSet a AbmResult
      */
-    private Linea mapLinea(ResultSet rs) throws SQLException {
-        return Linea.builder()
-                .codLinea(rs.getInt(1))
-                .codFamilia(rs.getLong(2))
-                .linea(rs.getString(3))
-                .audUsuario(rs.getLong(4))
-                .build();
+    private AbmResult mapAbmResult(ResultSet rs) throws SQLException {
+        AbmResult result = new AbmResult();
+        result.error = rs.getInt("p_error");
+        result.errorMsg = rs.getString("p_errormsg");
+
+        // Manejar el caso donde p_result puede ser NULL
+        int resultValue = rs.getInt("p_result");
+        result.result = rs.wasNull() ? null : resultValue;
+
+        return result;
     }
 }

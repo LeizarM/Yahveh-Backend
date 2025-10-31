@@ -21,9 +21,9 @@ public class DatabaseConfig {
 
     public void testConnection() {
         try (Connection conn = getConnection()) {
-            log.info("✅ Conexión a base de datos exitosa: {}", conn.getMetaData().getURL());
+            log.info("Conexión a base de datos exitosa: {}", conn.getMetaData().getURL());
         } catch (SQLException e) {
-            log.error("❌ Error al conectar a la base de datos", e);
+            log.error("Error al conectar a la base de datos", e);
         }
     }
 }

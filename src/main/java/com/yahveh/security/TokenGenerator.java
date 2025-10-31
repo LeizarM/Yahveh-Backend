@@ -13,9 +13,9 @@ public class TokenGenerator {
     public static void main(String[] args) {
         String token = Jwt.issuer("https://yahveh.com")
                 .upn("admin")
-                .groups(Set.of("ADMIN"))
+                .groups(Set.of("admin", "lim"))
                 .claim("codUsuario", 1L)
-                .claim("tipoUsuario", "ADMIN")
+                .claim("tipoUsuario", "admin")
                 .expiresIn(Duration.ofHours(8))
                 .sign();
 
