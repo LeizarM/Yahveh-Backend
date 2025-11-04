@@ -2,7 +2,6 @@ package com.yahveh.service;
 
 import com.yahveh.dto.request.UsuarioRequest;
 import com.yahveh.dto.response.UsuarioResponse;
-import com.yahveh.exception.BusinessException;
 import com.yahveh.exception.NotFoundException;
 import com.yahveh.model.Usuario;
 import com.yahveh.repository.UsuarioRepository;
@@ -20,17 +19,21 @@ public class UsuarioService {
     @Inject
     UsuarioRepository usuarioRepository;
 
+    /**
+     * Listar todos los usuarios
+     */
     public List<UsuarioResponse> listarTodos() {
         log.info("Listando todos los usuarios");
-
         return usuarioRepository.listarTodos().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Buscar usuario por ID
+     */
     public UsuarioResponse buscarPorId(int codUsuario) {
         log.info("Buscando usuario con ID: {}", codUsuario);
-
         return usuarioRepository.buscarPorId(codUsuario)
                 .map(this::toResponse)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
@@ -39,24 +42,8 @@ public class UsuarioService {
     /**
      * Crear nuevo usuario
      */
-    public Long crearUsuario(UsuarioRequest request, int audUsuario) {
+    public int crearUsuario(UsuarioRequest request, int audUsuario) {
         log.info("Creando nuevo usuario: {}", request.getLogin());
-
-        // Validar que sea una creación
-        if (!request.esCreacion()) {
-            throw new BusinessException("No se debe enviar codUsuario al crear");
-        }
-
-        // Validar que el password esté presente
-        if (!request.cambiaPassword()) {
-            throw new BusinessException("El password es requerido al crear un usuario");
-        }
-
-        // Verificar si el login ya existe
-        var existente = usuarioRepository.buscarPorLogin(request.getLogin());
-        if (existente.isPresent()) {
-            throw new BusinessException("El login ya está en uso");
-        }
 
         Usuario usuario = Usuario.builder()
                 .codEmpleado(request.getCodEmpleado())
@@ -66,7 +53,7 @@ public class UsuarioService {
                 .audUsuario(audUsuario)
                 .build();
 
-        Long codUsuario = usuarioRepository.crearUsuario(usuario, request.getPassword());
+        int codUsuario = usuarioRepository.crearUsuario(usuario, request.getPassword());
 
         log.info("Usuario creado exitosamente con ID: {}", codUsuario);
         return codUsuario;
@@ -103,6 +90,9 @@ public class UsuarioService {
         log.info("Usuario actualizado exitosamente");
     }
 
+    /**
+     * Eliminar usuario
+     */
     public void eliminarUsuario(int codUsuario, int audUsuario) {
         log.info("Eliminando usuario ID: {}", codUsuario);
 
@@ -115,6 +105,9 @@ public class UsuarioService {
         log.info("Usuario eliminado exitosamente");
     }
 
+    /**
+     * Convertir Usuario a UsuarioResponse
+     */
     private UsuarioResponse toResponse(Usuario usuario) {
         return UsuarioResponse.builder()
                 .codUsuario(usuario.getCodUsuario())

@@ -5,7 +5,6 @@ import com.yahveh.dto.response.ClienteResponse;
 import com.yahveh.exception.NotFoundException;
 import com.yahveh.model.Cliente;
 import com.yahveh.repository.ClienteRepository;
-import com.yahveh.repository.ZonaRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -18,9 +17,6 @@ public class ClienteService {
 
     @Inject
     ClienteRepository clienteRepository;
-
-    @Inject
-    ZonaRepository zonaRepository;
 
     /**
      * Listar todos los clientes
@@ -44,12 +40,6 @@ public class ClienteService {
      */
     public List<ClienteResponse> listarPorZona(int codZona) {
         log.info("Listando clientes de zona: {}", codZona);
-
-        // Verificar que la zona existe
-        if (!zonaRepository.existeZona(codZona)) {
-            throw new NotFoundException("Zona no encontrada");
-        }
-
         return clienteRepository.listarPorZonaCompleto(codZona);
     }
 
@@ -75,11 +65,6 @@ public class ClienteService {
     public int crearCliente(ClienteRequest request, int audUsuario) {
         log.info("Creando nuevo cliente: {}", request.getNombreCliente());
 
-        // Verificar que la zona existe
-        if (!zonaRepository.existeZona(request.getCodZona())) {
-            throw new NotFoundException("Zona no encontrada");
-        }
-
         Cliente cliente = Cliente.builder()
                 .codZona(request.getCodZona())
                 .nit(request.getNit())
@@ -103,15 +88,6 @@ public class ClienteService {
     public void actualizarCliente(int codCliente, ClienteRequest request, int audUsuario) {
         log.info("Actualizando cliente: {}", codCliente);
 
-        // Verificar que el cliente existe
-        clienteRepository.buscarPorIdCompleto(codCliente)
-                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
-
-        // Verificar que la zona existe
-        if (!zonaRepository.existeZona(request.getCodZona())) {
-            throw new NotFoundException("Zona no encontrada");
-        }
-
         Cliente cliente = Cliente.builder()
                 .codCliente(codCliente)
                 .codZona(request.getCodZona())
@@ -134,10 +110,6 @@ public class ClienteService {
      */
     public void eliminarCliente(int codCliente, int audUsuario) {
         log.info("Eliminando cliente: {}", codCliente);
-
-        // Verificar que el cliente existe
-        clienteRepository.buscarPorIdCompleto(codCliente)
-                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
         clienteRepository.eliminarCliente(codCliente, audUsuario);
 

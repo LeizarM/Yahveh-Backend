@@ -5,7 +5,6 @@ import com.yahveh.dto.response.CiudadResponse;
 import com.yahveh.exception.NotFoundException;
 import com.yahveh.model.Ciudad;
 import com.yahveh.repository.CiudadRepository;
-import com.yahveh.repository.PaisRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -18,9 +17,6 @@ public class CiudadService {
 
     @Inject
     CiudadRepository ciudadRepository;
-
-    @Inject
-    PaisRepository paisRepository;
 
     /**
      * Listar todas las ciudades
@@ -44,12 +40,6 @@ public class CiudadService {
      */
     public List<CiudadResponse> listarPorPais(int codPais) {
         log.info("Listando ciudades de país: {}", codPais);
-
-        // Verificar que el país existe
-        if (!paisRepository.existePais(codPais)) {
-            throw new NotFoundException("País no encontrado");
-        }
-
         return ciudadRepository.listarPorPaisCompleto(codPais);
     }
 
@@ -66,11 +56,6 @@ public class CiudadService {
      */
     public int crearCiudad(CiudadRequest request, int audUsuario) {
         log.info("Creando nueva ciudad: {}", request.getCiudad());
-
-        // Verificar que el país existe
-        if (!paisRepository.existePais(request.getCodPais())) {
-            throw new NotFoundException("País no encontrado");
-        }
 
         Ciudad ciudad = Ciudad.builder()
                 .codPais(request.getCodPais())
@@ -93,11 +78,6 @@ public class CiudadService {
         // Verificar que la ciudad existe
         ciudadRepository.buscarPorIdCompleto(codCiudad)
                 .orElseThrow(() -> new NotFoundException("Ciudad no encontrada"));
-
-        // Verificar que el país existe
-        if (!paisRepository.existePais(request.getCodPais())) {
-            throw new NotFoundException("País no encontrado");
-        }
 
         Ciudad ciudad = Ciudad.builder()
                 .codCiudad(codCiudad)

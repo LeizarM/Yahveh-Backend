@@ -12,10 +12,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ZonaResponse {
-    private Long codZona;
-    private Long codCiudad;
+    private int codZona;
+    private int codCiudad;
     private String ciudad;
     private String zona;
-    private Integer totalClientes;
-    private Integer audUsuario;
+    private int totalClientes;
+    private int audUsuario;
 }

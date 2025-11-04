@@ -1,16 +1,32 @@
 package com.yahveh.repository;
 
 import com.yahveh.dto.response.PaisResponse;
+import com.yahveh.exception.BusinessException;
 import com.yahveh.model.Pais;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @ApplicationScoped
 public class PaisRepository extends BaseRepository<Pais> {
+
+    /**
+     * Resultado de operación ABM
+     */
+    public static class AbmResult {
+        public int error;
+        public String errorMsg;
+        public Integer result;
+
+        public boolean isSuccess() {
+            return error == 0;
+        }
+    }
 
     /**
      * Listar todos los países con información completa
@@ -47,65 +63,81 @@ public class PaisRepository extends BaseRepository<Pais> {
     }
 
     /**
-     * Buscar país por ID (solo para validaciones)
-     */
-    public Optional<Pais> buscarPorId(int codPais) {
-        String sql = "SELECT cod_pais, pais, total_ciudades, aud_usuario " +
-                "FROM p_list_pais(p_codpais := ?, p_accion := ?)";
-        return executeQuerySingle(sql, this::mapPais, codPais, "L");
-    }
-
-    /**
-     * Crear nuevo país
+     * Crear nuevo país con manejo de errores
      */
     public int crearPais(Pais pais) {
-        String sql = "SELECT p_abm_pais(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_pais(" +
                 "p_pais := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
-        return executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                this::mapAbmResult,
                 pais.getPais(),
                 pais.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al crear país"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_pais"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al crear país. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("País creado exitosamente con ID: {}", result.result);
+        return result.result;
     }
 
     /**
-     * Actualizar país
+     * Actualizar país con manejo de errores
      */
     public void actualizarPais(Pais pais) {
-        String sql = "SELECT p_abm_pais(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_pais(" +
                 "p_codpais := ?, " +
                 "p_pais := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'U')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 pais.getCodPais(),
                 pais.getPais(),
                 pais.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al actualizar país"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_pais"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al actualizar país. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("País actualizado exitosamente: {}", pais.getCodPais());
     }
 
     /**
-     * Eliminar país
+     * Eliminar país con manejo de errores
      */
     public void eliminarPais(int codPais, int audUsuario) {
-        String sql = "SELECT p_abm_pais(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_pais(" +
                 "p_codpais := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'D')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 codPais,
                 audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al eliminar país"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_pais"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al eliminar país. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("País eliminado exitosamente: {}", codPais);
     }
 
     /**
@@ -121,13 +153,17 @@ public class PaisRepository extends BaseRepository<Pais> {
     }
 
     /**
-     * Mapear ResultSet a Pais
+     * Mapear ResultSet a AbmResult
      */
-    private Pais mapPais(ResultSet rs) throws SQLException {
-        return Pais.builder()
-                .codPais(rs.getInt(1))
-                .pais(rs.getString(2))
-                .audUsuario(rs.getInt(3))
-                .build();
+    private AbmResult mapAbmResult(ResultSet rs) throws SQLException {
+        AbmResult result = new AbmResult();
+        result.error = rs.getInt("p_error");
+        result.errorMsg = rs.getString("p_errormsg");
+
+        // Manejar el caso donde p_result puede ser NULL
+        int resultValue = rs.getInt("p_result");
+        result.result = rs.wasNull() ? null : resultValue;
+
+        return result;
     }
 }

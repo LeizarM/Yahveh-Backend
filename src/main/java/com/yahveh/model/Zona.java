@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Zona {
-    private long codZona;
-    private long codCiudad;
+    private int codZona;
+    private int codCiudad;
     private String zona;
     private int audUsuario;
 }

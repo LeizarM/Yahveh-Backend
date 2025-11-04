@@ -1,16 +1,32 @@
 package com.yahveh.repository;
 
 import com.yahveh.dto.response.CiudadResponse;
+import com.yahveh.exception.BusinessException;
 import com.yahveh.model.Ciudad;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @ApplicationScoped
 public class CiudadRepository extends BaseRepository<Ciudad> {
+
+    /**
+     * Resultado de operación ABM
+     */
+    public static class AbmResult {
+        public int error;
+        public String errorMsg;
+        public Integer result;
+
+        public boolean isSuccess() {
+            return error == 0;
+        }
+    }
 
     /**
      * Listar todas las ciudades con información completa
@@ -56,69 +72,85 @@ public class CiudadRepository extends BaseRepository<Ciudad> {
     }
 
     /**
-     * Buscar ciudad por ID (solo para validaciones)
-     */
-    public Optional<Ciudad> buscarPorId(int codCiudad) {
-        String sql = "SELECT cod_ciudad, cod_pais, pais, ciudad, total_zonas, aud_usuario " +
-                "FROM p_list_ciudad(p_codciudad := ?, p_accion := ?)";
-        return executeQuerySingle(sql, this::mapCiudad, codCiudad, "L");
-    }
-
-    /**
-     * Crear nueva ciudad
+     * Crear nueva ciudad con manejo de errores
      */
     public int crearCiudad(Ciudad ciudad) {
-        String sql = "SELECT p_abm_ciudad(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_ciudad(" +
                 "p_codpais := ?, " +
                 "p_ciudad := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
-        return executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                this::mapAbmResult,
                 ciudad.getCodPais(),
                 ciudad.getCiudad(),
                 ciudad.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al crear ciudad"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_ciudad"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al crear ciudad. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Ciudad creada exitosamente con ID: {}", result.result);
+        return result.result;
     }
 
     /**
-     * Actualizar ciudad
+     * Actualizar ciudad con manejo de errores
      */
     public void actualizarCiudad(Ciudad ciudad) {
-        String sql = "SELECT p_abm_ciudad(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_ciudad(" +
                 "p_codciudad := ?, " +
                 "p_codpais := ?, " +
                 "p_ciudad := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'U')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                this::mapAbmResult,
                 ciudad.getCodCiudad(),
                 ciudad.getCodPais(),
                 ciudad.getCiudad(),
                 ciudad.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al actualizar ciudad"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_ciudad"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al actualizar ciudad. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Ciudad actualizada exitosamente: {}", ciudad.getCodCiudad());
     }
 
     /**
-     * Eliminar ciudad
+     * Eliminar ciudad con manejo de errores
      */
     public void eliminarCiudad(int codCiudad, int audUsuario) {
-        String sql = "SELECT p_abm_ciudad(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_ciudad(" +
                 "p_codciudad := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'D')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                this::mapAbmResult,
                 codCiudad,
                 audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al eliminar ciudad"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_ciudad"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al eliminar ciudad. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Ciudad eliminada exitosamente: {}", codCiudad);
     }
 
     /**
@@ -136,14 +168,17 @@ public class CiudadRepository extends BaseRepository<Ciudad> {
     }
 
     /**
-     * Mapear ResultSet a Ciudad
+     * Mapear ResultSet a AbmResult
      */
-    private Ciudad mapCiudad(ResultSet rs) throws SQLException {
-        return Ciudad.builder()
-                .codCiudad(rs.getInt(1))
-                .codPais(rs.getInt(2))
-                .ciudad(rs.getString(3))
-                .audUsuario(rs.getInt(4))
-                .build();
+    private AbmResult mapAbmResult(ResultSet rs) throws SQLException {
+        AbmResult result = new AbmResult();
+        result.error = rs.getInt("p_error");
+        result.errorMsg = rs.getString("p_errormsg");
+
+        // Manejar el caso donde p_result puede ser NULL
+        int resultValue = rs.getInt("p_result");
+        result.result = rs.wasNull() ? null : resultValue;
+
+        return result;
     }
 }

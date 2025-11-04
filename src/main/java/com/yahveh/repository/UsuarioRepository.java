@@ -1,14 +1,12 @@
 package com.yahveh.repository;
 
+import com.yahveh.exception.BusinessException;
 import com.yahveh.model.Usuario;
-import com.yahveh.repository.BaseRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,11 +17,23 @@ import java.util.Optional;
 public class UsuarioRepository extends BaseRepository<Usuario> {
 
     /**
+     * Resultado de operación ABM
+     */
+    public static class AbmResult {
+        public int error;
+        public String errorMsg;
+        public Long result;
+
+        public boolean isSuccess() {
+            return error == 0;
+        }
+    }
+
+    /**
      * Login con autenticación bcrypt
      */
     public Optional<Map<String, Object>> login(String login, String password) {
         String sql = "SELECT * FROM p_list_usuario(NULL, NULL, ?, ?, NULL, NULL, NULL, 'A')";
-
         log.debug("Intentando login para usuario: {}", login);
         return executeQuerySingle(sql, this::mapLoginResult, login, password);
     }
@@ -33,7 +43,6 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
      */
     public List<Usuario> listarTodos() {
         String sql = "SELECT * FROM p_list_usuario(NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'L')";
-
         return executeQueryList(sql, this::mapUsuario);
     }
 
@@ -42,7 +51,6 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
      */
     public Optional<Usuario> buscarPorId(int codUsuario) {
         String sql = "SELECT * FROM p_list_usuario(?, NULL, NULL, NULL, NULL, NULL, NULL, 'L')";
-
         return executeQuerySingle(sql, this::mapUsuario, codUsuario);
     }
 
@@ -51,58 +59,95 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
      */
     public Optional<Usuario> buscarPorLogin(String login) {
         String sql = "SELECT * FROM p_list_usuario(NULL, NULL, ?, NULL, NULL, NULL, NULL, 'B')";
-
         return executeQuerySingle(sql, this::mapUsuario, login);
     }
 
     /**
-     * Listar usuarios con filtros
+     * Crear nuevo usuario con manejo de errores
      */
-    public List<Usuario> listarConFiltros(Long codEmpleado, String login, String tipoUsuario, String estado) {
-        String sql = "SELECT * FROM p_list_usuario(NULL, ?, ?, NULL, ?, ?, NULL, 'L')";
+    public int crearUsuario(Usuario usuario, String passwordPlain) {
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_usuario(" +
+                "p_codempleado := ?, " +
+                "p_login := ?, " +
+                "p_password := ?, " +
+                "p_tipousuario := ?, " +
+                "p_estado := ?, " +
+                "p_audusuario := ?, " +
+                "p_accion := 'I')";
 
-        return executeQueryList(sql, this::mapUsuario, codEmpleado, login, tipoUsuario, estado);
-    }
-
-    /**
-     * Crear nuevo usuario
-     */
-    public Long crearUsuario(Usuario usuario, String passwordPlain) {
-        String sql = "SELECT p_abm_usuario(NULL, ?, ?, ?, ?, ?, ?, 'I')";
-
-        return executeQuerySingle(sql, rs -> rs.getLong(1),
+        AbmResult result = executeQuerySingle(
+                sql,
+                this::mapAbmResult,
                 usuario.getCodEmpleado(),
                 usuario.getLogin(),
                 passwordPlain,
                 usuario.getTipoUsuario(),
                 usuario.getEstado(),
                 usuario.getAudUsuario()
-        ).orElse(null);
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_usuario"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al crear usuario. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Usuario creado exitosamente con ID: {}", result.result);
+        return result.result.intValue();
     }
 
     /**
-     * Actualizar usuario (sin cambiar password)
+     * Actualizar usuario (sin cambiar password) con manejo de errores
      */
-    public Long actualizarUsuario(Usuario usuario) {
-        String sql = "SELECT p_abm_usuario(?, ?, ?, NULL, ?, ?, ?, 'U')";
+    public void actualizarUsuario(Usuario usuario) {
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_usuario(" +
+                "p_codusuario := ?, " +
+                "p_codempleado := ?, " +
+                "p_login := ?, " +
+                "p_password := NULL, " +
+                "p_tipousuario := ?, " +
+                "p_estado := ?, " +
+                "p_audusuario := ?, " +
+                "p_accion := 'U')";
 
-        return executeQuerySingle(sql, rs -> rs.getLong(1),
+        AbmResult result = executeQuerySingle(
+                sql,
+                this::mapAbmResult,
                 usuario.getCodUsuario(),
                 usuario.getCodEmpleado(),
                 usuario.getLogin(),
                 usuario.getTipoUsuario(),
                 usuario.getEstado(),
                 usuario.getAudUsuario()
-        ).orElse(null);
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_usuario"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al actualizar usuario. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Usuario actualizado exitosamente: {}", usuario.getCodUsuario());
     }
 
     /**
-     * Actualizar usuario con cambio de password
+     * Actualizar usuario con cambio de password con manejo de errores
      */
-    public Long actualizarUsuarioConPassword(Usuario usuario, String passwordPlain) {
-        String sql = "SELECT p_abm_usuario(?, ?, ?, ?, ?, ?, ?, 'U')";
+    public void actualizarUsuarioConPassword(Usuario usuario, String passwordPlain) {
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_usuario(" +
+                "p_codusuario := ?, " +
+                "p_codempleado := ?, " +
+                "p_login := ?, " +
+                "p_password := ?, " +
+                "p_tipousuario := ?, " +
+                "p_estado := ?, " +
+                "p_audusuario := ?, " +
+                "p_accion := 'U')";
 
-        return executeQuerySingle(sql, rs -> rs.getLong(1),
+        AbmResult result = executeQuerySingle(
+                sql,
+                this::mapAbmResult,
                 usuario.getCodUsuario(),
                 usuario.getCodEmpleado(),
                 usuario.getLogin(),
@@ -110,19 +155,39 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
                 usuario.getTipoUsuario(),
                 usuario.getEstado(),
                 usuario.getAudUsuario()
-        ).orElse(null);
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_usuario"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al actualizar usuario con password. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Usuario actualizado exitosamente con cambio de password: {}", usuario.getCodUsuario());
     }
 
     /**
-     * Eliminar usuario (soft delete)
+     * Eliminar usuario (soft delete) con manejo de errores
      */
-    public Long eliminarUsuario(int codUsuario, int audUsuario) {
-        String sql = "SELECT p_abm_usuario(?, NULL, NULL, NULL, NULL, NULL, ?, 'D')";
+    public void eliminarUsuario(int codUsuario, int audUsuario) {
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_usuario(" +
+                "p_codusuario := ?, " +
+                "p_audusuario := ?, " +
+                "p_accion := 'D')";
 
-        return executeQuerySingle(sql, rs -> rs.getLong(1),
+        AbmResult result = executeQuerySingle(
+                sql,
+                this::mapAbmResult,
                 codUsuario,
                 audUsuario
-        ).orElse(null);
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_usuario"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al eliminar usuario. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Usuario eliminado exitosamente: {}", codUsuario);
     }
 
     /**
@@ -146,21 +211,27 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
      */
     private Usuario mapUsuario(ResultSet rs) throws SQLException {
         return Usuario.builder()
-                .codUsuario(rs.getLong("cod_usuario"))
-                .codEmpleado(rs.getLong("cod_empleado"))
-                .login(rs.getString("login"))
-                .tipoUsuario(rs.getString("tipo_usuario"))
-                .estado(rs.getString("estado"))
-                .audUsuario(rs.getInt("aud_usuario"))
-                //.audFecha(getLocalDateTime(rs, "aud_fecha"))
+                .codUsuario(rs.getLong(1))
+                .codEmpleado(rs.getLong(2))
+                .login(rs.getString(3))
+                .tipoUsuario(rs.getString(4))
+                .estado(rs.getString(5))
+                .audUsuario(rs.getInt(6))
                 .build();
     }
 
     /**
-     * Helper para convertir Timestamp a LocalDateTime
+     * Mapear ResultSet a AbmResult
      */
-    private LocalDateTime getLocalDateTime(ResultSet rs, String columnName) throws SQLException {
-        Timestamp timestamp = rs.getTimestamp(columnName);
-        return timestamp != null ? timestamp.toLocalDateTime() : null;
+    private AbmResult mapAbmResult(ResultSet rs) throws SQLException {
+        AbmResult result = new AbmResult();
+        result.error = rs.getInt("p_error");
+        result.errorMsg = rs.getString("p_errormsg");
+
+        // Manejar el caso donde p_result puede ser NULL
+        long resultValue = rs.getLong("p_result");
+        result.result = rs.wasNull() ? null : resultValue;
+
+        return result;
     }
 }

@@ -1,16 +1,32 @@
 package com.yahveh.repository;
 
 import com.yahveh.dto.response.ZonaResponse;
+import com.yahveh.exception.BusinessException;
 import com.yahveh.model.Zona;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @ApplicationScoped
 public class ZonaRepository extends BaseRepository<Zona> {
+
+    /**
+     * Resultado de operación ABM
+     */
+    public static class AbmResult {
+        public int error;
+        public String errorMsg;
+        public int result;
+
+        public boolean isSuccess() {
+            return error == 0;
+        }
+    }
 
     /**
      * Listar todas las zonas con información completa
@@ -56,78 +72,94 @@ public class ZonaRepository extends BaseRepository<Zona> {
     }
 
     /**
-     * Buscar zona por ID (solo para validaciones)
-     */
-    public Optional<Zona> buscarPorId(int codZona) {
-        String sql = "SELECT cod_zona, cod_ciudad, ciudad, zona, total_clientes, aud_usuario " +
-                "FROM p_list_zona(p_codzona := ?, p_accion := ?)";
-        return executeQuerySingle(sql, this::mapZona, codZona, "L");
-    }
-
-    /**
-     * Crear nueva zona
+     * Crear nueva zona con manejo de errores
      */
     public int crearZona(Zona zona) {
-        String sql = "SELECT p_abm_zona(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_zona(" +
                 "p_codciudad := ?, " +
                 "p_zona := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
-        return executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                this::mapAbmResult,
                 zona.getCodCiudad(),
                 zona.getZona(),
                 zona.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al crear zona"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_zona"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al crear zona. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Zona creada exitosamente con ID: {}", result.result);
+        return result.result;
     }
 
     /**
-     * Actualizar zona
+     * Actualizar zona con manejo de errores
      */
     public void actualizarZona(Zona zona) {
-        String sql = "SELECT p_abm_zona(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_zona(" +
                 "p_codzona := ?, " +
                 "p_codciudad := ?, " +
                 "p_zona := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'U')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 zona.getCodZona(),
                 zona.getCodCiudad(),
                 zona.getZona(),
                 zona.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al actualizar zona"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_zona"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al actualizar zona. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Zona actualizada exitosamente: {}", zona.getCodZona());
     }
 
     /**
-     * Eliminar zona
+     * Eliminar zona con manejo de errores
      */
     public void eliminarZona(int codZona, int audUsuario) {
-        String sql = "SELECT p_abm_zona(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_zona(" +
                 "p_codzona := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'D')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 codZona,
                 audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al eliminar zona"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_zona"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al eliminar zona. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Zona eliminada exitosamente: {}", codZona);
     }
 
     /**
-     * Mapear ResultSet a ZonaResponse (con todos los datos del SP)
+     * Mapear ResultSet a ZonaResponse
      */
     private ZonaResponse mapZonaResponse(ResultSet rs) throws SQLException {
         return ZonaResponse.builder()
-                .codZona(rs.getLong(1))
-                .codCiudad(rs.getLong(2))
+                .codZona(rs.getInt(1))
+                .codCiudad(rs.getInt(2))
                 .ciudad(rs.getString(3))
                 .zona(rs.getString(4))
                 .totalClientes(rs.getInt(5))
@@ -136,14 +168,14 @@ public class ZonaRepository extends BaseRepository<Zona> {
     }
 
     /**
-     * Mapear ResultSet a Zona (solo para validaciones)
+     * Mapear ResultSet a AbmResult
      */
-    private Zona mapZona(ResultSet rs) throws SQLException {
-        return Zona.builder()
-                .codZona(rs.getLong(1))
-                .codCiudad(rs.getLong(2))
-                .zona(rs.getString(3))
-                .audUsuario(rs.getInt(4))
-                .build();
+    private AbmResult mapAbmResult(ResultSet rs) throws SQLException {
+        AbmResult result = new AbmResult();
+        result.error = rs.getInt("p_error");
+        result.errorMsg = rs.getString("p_errormsg");
+        result.result = rs.wasNull() ? null : rs.getInt("p_result");
+
+        return result;
     }
 }

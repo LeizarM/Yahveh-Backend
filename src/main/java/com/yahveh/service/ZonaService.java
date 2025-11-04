@@ -4,7 +4,6 @@ import com.yahveh.dto.request.ZonaRequest;
 import com.yahveh.dto.response.ZonaResponse;
 import com.yahveh.exception.NotFoundException;
 import com.yahveh.model.Zona;
-import com.yahveh.repository.CiudadRepository;
 import com.yahveh.repository.ZonaRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -18,9 +17,6 @@ public class ZonaService {
 
     @Inject
     ZonaRepository zonaRepository;
-
-    @Inject
-    CiudadRepository ciudadRepository;
 
     /**
      * Listar todas las zonas
@@ -44,12 +40,6 @@ public class ZonaService {
      */
     public List<ZonaResponse> listarPorCiudad(int codCiudad) {
         log.info("Listando zonas de ciudad: {}", codCiudad);
-
-        // Verificar que la ciudad existe
-        if (!ciudadRepository.existeCiudad(codCiudad)) {
-            throw new NotFoundException("Ciudad no encontrada");
-        }
-
         return zonaRepository.listarPorCiudadCompleto(codCiudad);
     }
 
@@ -66,11 +56,6 @@ public class ZonaService {
      */
     public int crearZona(ZonaRequest request, int audUsuario) {
         log.info("Creando nueva zona: {}", request.getZona());
-
-        // Verificar que la ciudad existe
-        if (!ciudadRepository.existeCiudad(request.getCodCiudad())) {
-            throw new NotFoundException("Ciudad no encontrada");
-        }
 
         Zona zona = Zona.builder()
                 .codCiudad(request.getCodCiudad())
@@ -93,11 +78,6 @@ public class ZonaService {
         // Verificar que la zona existe
         zonaRepository.buscarPorIdCompleto(codZona)
                 .orElseThrow(() -> new NotFoundException("Zona no encontrada"));
-
-        // Verificar que la ciudad existe
-        if (!ciudadRepository.existeCiudad(request.getCodCiudad())) {
-            throw new NotFoundException("Ciudad no encontrada");
-        }
 
         Zona zona = Zona.builder()
                 .codZona(codZona)

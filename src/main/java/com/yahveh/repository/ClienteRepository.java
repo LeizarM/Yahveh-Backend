@@ -1,23 +1,39 @@
 package com.yahveh.repository;
 
 import com.yahveh.dto.response.ClienteResponse;
+import com.yahveh.exception.BusinessException;
 import com.yahveh.model.Cliente;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @ApplicationScoped
 public class ClienteRepository extends BaseRepository<Cliente> {
+
+    /**
+     * Resultado de operación ABM
+     */
+    public static class AbmResult {
+        public int error;
+        public String errorMsg;
+        public int result;
+
+        public boolean isSuccess() {
+            return error == 0;
+        }
+    }
 
     /**
      * Listar todos los clientes con información completa
      */
     public List<ClienteResponse> listarTodosCompleto() {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, total_notas, aud_usuario " +
+                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_accion := ?)";
         return executeQueryList(sql, this::mapClienteResponse, "L");
     }
@@ -27,7 +43,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
      */
     public Optional<ClienteResponse> buscarPorIdCompleto(int codCliente) {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, total_notas, aud_usuario " +
+                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_codcliente := ?, p_accion := ?)";
         return executeQuerySingle(sql, this::mapClienteResponse, codCliente, "L");
     }
@@ -37,7 +53,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
      */
     public List<ClienteResponse> listarPorZonaCompleto(int codZona) {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, total_notas, aud_usuario " +
+                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_codzona := ?, p_accion := ?)";
         return executeQueryList(sql, this::mapClienteResponse, codZona, "L");
     }
@@ -47,7 +63,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
      */
     public List<ClienteResponse> buscarPorNitCompleto(String nit) {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, total_notas, aud_usuario " +
+                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_nit := ?, p_accion := ?)";
         return executeQueryList(sql, this::mapClienteResponse, nit, "L");
     }
@@ -57,7 +73,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
      */
     public List<ClienteResponse> buscarPorNombreCompleto(String nombre) {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, total_notas, aud_usuario " +
+                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_nombre := ?, p_accion := ?)";
         return executeQueryList(sql, this::mapClienteResponse, nombre, "L");
     }
@@ -70,10 +86,11 @@ public class ClienteRepository extends BaseRepository<Cliente> {
     }
 
     /**
-     * Crear nuevo cliente
+     * Crear nuevo cliente con manejo de errores
      */
     public int crearCliente(Cliente cliente) {
-        String sql = "SELECT p_abm_cliente(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_cliente(" +
                 "p_codzona := ?, " +
                 "p_nit := ?, " +
                 "p_razonsocial := ?, " +
@@ -81,12 +98,13 @@ public class ClienteRepository extends BaseRepository<Cliente> {
                 "p_direccion := ?, " +
                 "p_referencia := ?, " +
                 "p_obs := ?, " +
+                "p_telefono := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
-        return executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getInt(1),
+                this::mapAbmResult,
                 cliente.getCodZona(),
                 cliente.getNit(),
                 cliente.getRazonSocial(),
@@ -95,14 +113,23 @@ public class ClienteRepository extends BaseRepository<Cliente> {
                 cliente.getReferencia(),
                 cliente.getObs(),
                 cliente.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al crear cliente"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_cliente"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al crear cliente. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Cliente creado exitosamente con ID: {}", result.result);
+        return result.result;
     }
 
     /**
-     * Actualizar cliente
+     * Actualizar cliente con manejo de errores
      */
     public void actualizarCliente(Cliente cliente) {
-        String sql = "SELECT p_abm_cliente(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_cliente(" +
                 "p_codcliente := ?, " +
                 "p_codzona := ?, " +
                 "p_nit := ?, " +
@@ -111,12 +138,13 @@ public class ClienteRepository extends BaseRepository<Cliente> {
                 "p_direccion := ?, " +
                 "p_referencia := ?, " +
                 "p_obs := ?, " +
+                "p_telefono := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'U')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 cliente.getCodCliente(),
                 cliente.getCodZona(),
                 cliente.getNit(),
@@ -126,33 +154,48 @@ public class ClienteRepository extends BaseRepository<Cliente> {
                 cliente.getReferencia(),
                 cliente.getObs(),
                 cliente.getAudUsuario()
-        ).orElseThrow(() -> new RuntimeException("Error al actualizar cliente"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_cliente"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al actualizar cliente. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Cliente actualizado exitosamente: {}", cliente.getCodCliente());
     }
 
     /**
-     * Eliminar cliente
+     * Eliminar cliente con manejo de errores
      */
     public void eliminarCliente(int codCliente, int audUsuario) {
-        String sql = "SELECT p_abm_cliente(" +
+        String sql = "SELECT p_error, p_errormsg, p_result " +
+                "FROM p_abm_cliente(" +
                 "p_codcliente := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'D')";
 
-        executeQuerySingle(
+        AbmResult result = executeQuerySingle(
                 sql,
-                rs -> rs.getLong(1),
+                this::mapAbmResult,
                 codCliente,
                 audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al eliminar cliente"));
+        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento p_abm_cliente"));
+
+        if (!result.isSuccess()) {
+            log.error("Error al eliminar cliente. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+
+        log.info("Cliente eliminado exitosamente: {}", codCliente);
     }
 
     /**
-     * Mapear ResultSet a ClienteResponse (con todos los datos del SP)
+     * Mapear ResultSet a ClienteResponse
      */
     private ClienteResponse mapClienteResponse(ResultSet rs) throws SQLException {
         return ClienteResponse.builder()
-                .codCliente(rs.getLong(1))
-                .codZona(rs.getLong(2))
+                .codCliente(rs.getInt(1))
+                .codZona(rs.getInt(2))
                 .zona(rs.getString(3))
                 .nit(rs.getString(4))
                 .razonSocial(rs.getString(5))
@@ -160,8 +203,24 @@ public class ClienteRepository extends BaseRepository<Cliente> {
                 .direccion(rs.getString(7))
                 .referencia(rs.getString(8))
                 .obs(rs.getString(9))
-                .totalNotas(rs.getInt(10))
-                .audUsuario(rs.getInt(11))
+                .telefono(rs.getInt(10))
+                .totalNotas(rs.getInt(11))
+                .audUsuario(rs.getInt(12))
                 .build();
+    }
+
+    /**
+     * Mapear ResultSet a AbmResult
+     */
+    private AbmResult mapAbmResult(ResultSet rs) throws SQLException {
+        AbmResult result = new AbmResult();
+        result.error = rs.getInt("p_error");
+        result.errorMsg = rs.getString("p_errormsg");
+
+        // Manejar el caso donde p_result puede ser NULL
+        int resultValue = rs.getInt("p_result");
+        result.result = rs.wasNull() ? null : resultValue;
+
+        return result;
     }
 }

@@ -20,6 +20,6 @@ public class Usuario {
     private String tipoUsuario;
     private String estado;
     private int audUsuario;
-    //private LocalDateTime audFecha;
+
 
 }

@@ -53,7 +53,7 @@ public class UsuarioResource {
         int codUsuario = securityUtils.getCurrentUserId();
         log.info("POST /api/usuarios - Usuario: {} - Creando: {}", securityUtils.getCurrentUsername(), request.getLogin());
 
-        Long nuevoId = usuarioService.crearUsuario(request, codUsuario);
+        int nuevoId = usuarioService.crearUsuario(request, codUsuario);
         return Response.status(Response.Status.CREATED)
                 .entity(ApiResponse.success("Usuario creado exitosamente", nuevoId))
                 .build();

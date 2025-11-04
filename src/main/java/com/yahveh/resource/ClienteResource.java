@@ -33,7 +33,7 @@ public class ClienteResource {
      */
     @GET
     public Response listarTodos() {
-        log.info("GET /api/clientes - Usuario: {}", securityUtils.getCurrentUserLogin());
+        log.info("GET /api/clientes - Usuario: {}", securityUtils.getCurrentUsername());
 
         List<ClienteResponse> clientes = clienteService.listarTodos();
 
@@ -58,7 +58,7 @@ public class ClienteResource {
      */
     @GET
     @Path("/zona/{codZona}")
-    public Response listarPorZona(@PathParam("codZona") int codZona) {
+    public Response listarPorZona(@PathParam("codZona")  int codZona) {
         log.info("GET /api/clientes/zona/{} - Usuario: {}", codZona, securityUtils.getCurrentUsername());
 
         List<ClienteResponse> clientes = clienteService.listarPorZona(codZona);
