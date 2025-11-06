@@ -104,7 +104,7 @@ public class LineaResource {
     @PUT
     @Path("/{id}")
     public Response actualizarLinea(@PathParam("id") int id, @Valid LineaRequest request) {
-        int codUsuario = (int) (long) securityUtils.getCurrentUserId();
+        int codUsuario = securityUtils.getCurrentUserId();
         log.info("PUT /api/lineas/{} - Usuario: {}", id, securityUtils.getCurrentUsername());
 
         lineaService.actualizarLinea(id, request, codUsuario);

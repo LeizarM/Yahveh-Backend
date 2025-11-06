@@ -33,7 +33,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
      */
     public List<ClienteResponse> listarTodosCompleto() {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
+                "direccion, referencia, obs, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_accion := ?)";
         return executeQueryList(sql, this::mapClienteResponse, "L");
     }
@@ -43,7 +43,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
      */
     public Optional<ClienteResponse> buscarPorIdCompleto(int codCliente) {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
+                "direccion, referencia, obs, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_codcliente := ?, p_accion := ?)";
         return executeQuerySingle(sql, this::mapClienteResponse, codCliente, "L");
     }
@@ -53,7 +53,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
      */
     public List<ClienteResponse> listarPorZonaCompleto(int codZona) {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
+                "direccion, referencia, obs, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_codzona := ?, p_accion := ?)";
         return executeQueryList(sql, this::mapClienteResponse, codZona, "L");
     }
@@ -63,7 +63,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
      */
     public List<ClienteResponse> buscarPorNitCompleto(String nit) {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
+                "direccion, referencia, obs, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_nit := ?, p_accion := ?)";
         return executeQueryList(sql, this::mapClienteResponse, nit, "L");
     }
@@ -73,7 +73,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
      */
     public List<ClienteResponse> buscarPorNombreCompleto(String nombre) {
         String sql = "SELECT cod_cliente, cod_zona, zona, nit, razon_social, nombre_cliente, " +
-                "direccion, referencia, obs, telefono, total_notas, aud_usuario " +
+                "direccion, referencia, obs, total_notas, aud_usuario " +
                 "FROM p_list_cliente(p_nombre := ?, p_accion := ?)";
         return executeQueryList(sql, this::mapClienteResponse, nombre, "L");
     }
@@ -98,7 +98,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
                 "p_direccion := ?, " +
                 "p_referencia := ?, " +
                 "p_obs := ?, " +
-                "p_telefono := ?, " +
+               // "p_telefono := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
@@ -138,7 +138,7 @@ public class ClienteRepository extends BaseRepository<Cliente> {
                 "p_direccion := ?, " +
                 "p_referencia := ?, " +
                 "p_obs := ?, " +
-                "p_telefono := ?, " +
+               // "p_telefono := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'U')";
 
@@ -203,9 +203,9 @@ public class ClienteRepository extends BaseRepository<Cliente> {
                 .direccion(rs.getString(7))
                 .referencia(rs.getString(8))
                 .obs(rs.getString(9))
-                .telefono(rs.getInt(10))
-                .totalNotas(rs.getInt(11))
-                .audUsuario(rs.getInt(12))
+                //.telefono(rs.getInt(10))
+                .totalNotas(rs.getInt(10))
+                .audUsuario(rs.getInt(11))
                 .build();
     }
 

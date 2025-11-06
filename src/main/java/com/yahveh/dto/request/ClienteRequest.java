@@ -40,7 +40,7 @@ public class ClienteRequest {
     @Size(max = 500, message = "Las observaciones no pueden exceder 500 caracteres")
     private String obs;
 
-    @NotNull(message = "El teléfono es obligatorio")
+    /*@NotNull(message = "El teléfono es obligatorio")
     @Positive(message = "El teléfono debe ser un número positivo")
-    private Integer telefono;
+    private Integer telefono;*/
 }
