@@ -1,13 +1,17 @@
-package com.yahveh.model;
+package com.yahveh.dto.response;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DetalleNotaEntrega {
+@Builder
+public class DetalleNotaEntregaResponse {
     private int codDetalle;
     private int codNotaEntrega;
     private String codArticulo;
@@ -20,4 +24,5 @@ public class DetalleNotaEntrega {
     private float precioTotal;
     private float precioSinFactura;
     private int audUsuario;
+    private LocalDateTime audFecha;
 }

@@ -18,7 +18,7 @@ import java.util.List;
 @Path("/api/inventario")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed({"ADMIN", "USER"})
+@RolesAllowed({"admin", "lim"})
 @Slf4j
 public class InventarioResource {
 
