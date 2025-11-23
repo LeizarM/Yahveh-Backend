@@ -153,23 +153,17 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
      */
     private NotaEntregaResponse mapNotaEntregaResponse(ResultSet rs) throws SQLException {
         NotaEntregaResponse response = NotaEntregaResponse.builder()
-                .codNotaEntrega(rs.getInt(1))
-                .codCliente(rs.getInt(2))
-                .nombreCliente(rs.getString(3))
-                .direccion(rs.getString(4))
-                .zona(rs.getString(5))
-                .audUsuario(rs.getInt(6))
-                .totalGeneral(rs.getFloat(7))
-                .totalArticulos(rs.getInt(8))
+                .codNotaEntrega(rs.getInt(1))        // cod_nota_entrega
+                .codCliente(rs.getInt(2))            // cod_cliente
+                .nombreCliente(rs.getString(3))      // nombre_cliente
+                .fecha(rs.getDate(4).toLocalDate())  // fecha
+                .direccion(rs.getString(5))          // direccion
+                .zona(rs.getString(6))               // zona
+                .audUsuario(rs.getInt(7))            // aud_usuario
+                .audFecha(rs.getTimestamp(8).toLocalDateTime())  // aud_fecha
+                .totalGeneral(rs.getFloat(9))       // total_general
+                .totalArticulos(rs.getInt(10))      // total_articulos
                 .build();
-
-        // Manejar fecha
-        java.sql.Date fecha = rs.getDate("fecha");
-        if (fecha != null) {
-            response.setFecha(fecha.toLocalDate());
-        }
-
-
 
         return response;
     }

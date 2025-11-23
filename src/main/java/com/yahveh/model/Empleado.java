@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Empleado {
-    private Long codEmpleado;
-    private Long codPersona;
-    private Long audUsuario;
-    //private LocalDateTime audFecha;
+    private long codEmpleado;
+    private long codPersona;
+    private long audUsuario;
+
 }

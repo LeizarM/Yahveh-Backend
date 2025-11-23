@@ -211,12 +211,12 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
      */
     private Usuario mapUsuario(ResultSet rs) throws SQLException {
         return Usuario.builder()
-                .codUsuario(rs.getLong(1))
-                .codEmpleado(rs.getLong(2))
-                .login(rs.getString(3))
-                .tipoUsuario(rs.getString(4))
-                .estado(rs.getString(5))
-                .audUsuario(rs.getInt(6))
+                .codUsuario(rs.getLong("cod_usuario"))
+                .codEmpleado(rs.getLong("cod_empleado"))
+                .login(rs.getString("login"))
+                .tipoUsuario(rs.getString("tipo_usuario"))
+                .estado(rs.getString("estado"))
+                .audUsuario(rs.getInt("aud_usuario"))
                 .build();
     }
 
