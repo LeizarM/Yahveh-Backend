@@ -17,17 +17,6 @@ import java.util.Optional;
 public class UsuarioRepository extends BaseRepository<Usuario> {
 
     /**
-     * Resultado de operación ABM
-     */
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public Long result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
 
     /**
      * Login con autenticación bcrypt
@@ -230,7 +219,7 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
 
         // Manejar el caso donde p_result puede ser NULL
         long resultValue = rs.getLong("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
+        result.result = rs.wasNull() ? null : (int) resultValue;
 
         return result;
     }

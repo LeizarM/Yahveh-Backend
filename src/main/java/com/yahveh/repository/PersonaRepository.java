@@ -16,15 +16,6 @@ import java.util.Optional;
 @ApplicationScoped
 public class PersonaRepository extends BaseRepository<Persona> {
 
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public long result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
 
     /**
      * Listar todas las personas
@@ -212,7 +203,7 @@ public class PersonaRepository extends BaseRepository<Persona> {
         result.errorMsg = rs.getString("p_errormsg");
 
         long resultValue = rs.getLong("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
+        result.result = rs.wasNull() ? null : (int) resultValue;
 
         return result;
     }
