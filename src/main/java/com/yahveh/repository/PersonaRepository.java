@@ -203,7 +203,7 @@ public class PersonaRepository extends BaseRepository<Persona> {
         result.errorMsg = rs.getString("p_errormsg");
 
         long resultValue = rs.getLong("p_result");
-        result.result = rs.wasNull() ? null : (int) resultValue;
+        result.result = rs.wasNull() ? null : Integer.valueOf((int) resultValue);
 
         return result;
     }
