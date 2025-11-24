@@ -11,6 +11,7 @@ public class SecurityUtils {
     JsonWebToken jwt;
 
     // Cache para evitar parsing repetido de claims en la misma petición
+    // Thread-safe: @RequestScoped garantiza una instancia por petición HTTP
     private Integer cachedUserId;
     private String cachedUserType;
 

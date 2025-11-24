@@ -160,7 +160,7 @@ public class EmpleadoRepository extends BaseRepository<Empleado> {
         result.errorMsg = rs.getString("p_errormsg");
 
         long resultValue = rs.getLong("p_result");
-        result.result = rs.wasNull() ? null : Integer.valueOf((int) resultValue);
+        result.result = rs.wasNull() ? null : AbmResult.safeLongToInteger(resultValue);
 
         return result;
     }

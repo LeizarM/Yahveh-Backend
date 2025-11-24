@@ -219,7 +219,7 @@ public class UsuarioRepository extends BaseRepository<Usuario> {
 
         // Manejar el caso donde p_result puede ser NULL
         long resultValue = rs.getLong("p_result");
-        result.result = rs.wasNull() ? null : Integer.valueOf((int) resultValue);
+        result.result = rs.wasNull() ? null : AbmResult.safeLongToInteger(resultValue);
 
         return result;
     }
