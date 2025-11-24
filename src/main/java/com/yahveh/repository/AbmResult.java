@@ -17,16 +17,18 @@ public class AbmResult {
     }
 
     /**
-     * Convierte un long a Integer de forma segura
-     * Registra una advertencia si hay pérdida de precisión
+     * Convierte un long a Integer de forma segura con detección de overflow
+     * 
+     * Si el valor excede el rango de Integer, registra una advertencia y retorna el valor truncado.
+     * Esto permite que la aplicación continúe funcionando mientras se investiga el problema en la base de datos.
      * 
      * @param value valor long del stored procedure
-     * @return Integer value, o null si excede el rango de int
+     * @return Integer value (truncado si excede el rango, con advertencia en el log)
      */
     public static Integer safeLongToInteger(long value) {
         if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
-            log.warn("Valor {} excede el rango de Integer. Esto puede indicar un problema en la base de datos.", value);
-            // Retornar el valor truncado con advertencia
+            log.warn("Valor {} excede el rango de Integer. Esto puede indicar un problema en la base de datos. " +
+                    "El valor será truncado a {}.", value, (int) value);
             return (int) value;
         }
         return (int) value;

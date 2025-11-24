@@ -4,14 +4,30 @@ Este documento describe las optimizaciones de rendimiento implementadas en el pr
 
 ## Optimizaciones Implementadas
 
-### 1. N+1 Query Problem - Solución de Carga en Batch
+### 1. N+1 Query Problem - Preparación para Carga en Batch
 
 **Problema**: El servicio `NotaEntregaService` cargaba los detalles de cada nota en un loop, resultando en N+1 consultas a la base de datos.
 
-**Solución**: 
+**Solución Implementada**: 
 - Se agregó el método `listarPorNotasEntregaBatch()` en `DetalleNotaEntregaRepository`
-- Los métodos `listar()`, `listarPorCliente()`, y `listarPorFechas()` ahora cargan todos los detalles en batch
-- **Impacto**: Reducción de queries de O(N+1) a O(1) para listas de notas
+- Los métodos `listar()`, `listarPorCliente()`, y `listarPorFechas()` ahora usan este método centralizado
+- Se centralizó la lógica de carga de detalles para facilitar optimización futura
+- **Impacto Actual**: Código más mantenible y preparado para verdadera optimización batch
+
+**Limitación Actual**: Debido a que los stored procedures actuales no soportan arrays de entrada, la implementación actual aún ejecuta N consultas. Sin embargo, la refactorización facilita la migración futura.
+
+**Próximo Paso Recomendado**: Modificar el stored procedure `p_list_detalle_nota_entrega` para aceptar un array de códigos de nota y retornar todos los detalles en una sola consulta:
+```sql
+CREATE OR REPLACE FUNCTION p_list_detalle_nota_entrega(p_codnotasentrega INT[])
+RETURNS TABLE(...) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT ... FROM t_detalle_nota_entrega 
+  WHERE cod_nota_entrega = ANY(p_codnotasentrega);
+END;
+$$ LANGUAGE plpgsql;
+```
+- **Impacto Futuro**: Reducción real de queries de O(N+1) a O(1) para listas de notas
 
 **Código antes**:
 ```java
@@ -102,7 +118,34 @@ Para operaciones sobre colecciones:
 
 ## Futuras Optimizaciones Potenciales
 
-### 1. Caché de Nivel de Aplicación
+### 1. Verdadera Carga Batch para Detalles (Alta Prioridad)
+Actualizar los stored procedures para soportar carga batch real:
+```sql
+-- Ejemplo de stored procedure optimizado
+CREATE OR REPLACE FUNCTION p_list_detalle_nota_entrega_batch(p_codnotasentrega INT[])
+RETURNS TABLE(
+    cod_detalle INT,
+    cod_nota_entrega INT,
+    cod_articulo VARCHAR,
+    -- otros campos...
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT d.*
+  FROM t_detalle_nota_entrega d
+  WHERE d.cod_nota_entrega = ANY(p_codnotasentrega)
+  ORDER BY d.cod_nota_entrega, d.cod_detalle;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+Beneficios:
+- Reducción real de N+1 queries a 1 query
+- Mejor uso de índices de base de datos
+- Menor latencia de red
+- Estimado: 50-80% reducción en tiempo de respuesta para listados grandes
+
+### 2. Caché de Nivel de Aplicación
 Considerar usar Quarkus Cache para datos que cambian poco:
 - Listas de países, ciudades, zonas
 - Configuraciones del sistema

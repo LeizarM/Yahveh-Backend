@@ -24,8 +24,15 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
     }
 
     /**
-     * Listar detalles para múltiples notas de entrega en una sola consulta
-     * Optimización para evitar N+1 queries
+     * Listar detalles para múltiples notas de entrega
+     * 
+     * NOTA IMPORTANTE: Esta implementación ejecuta N consultas en un loop debido a limitaciones
+     * de los stored procedures actuales. Para una verdadera optimización batch, se requeriría:
+     * 1. Modificar el stored procedure p_list_detalle_nota_entrega para aceptar un array de IDs
+     * 2. O crear un nuevo stored procedure que haga JOIN y filtre por múltiples notas
+     * 
+     * La ventaja actual es que centraliza la lógica y facilita la migración futura a una
+     * solución batch real cuando se actualicen los stored procedures.
      * 
      * @param codNotasEntrega Lista de códigos de notas de entrega
      * @return Map con codNotaEntrega como clave y lista de detalles como valor
@@ -44,15 +51,14 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
             return result;
         }
 
-        // Para múltiples notas, hacer consultas en lote
-        // Cargar todos los detalles y agruparlos por nota
+        // Para múltiples notas, ejecutar consultas individuales
+        // TODO: Actualizar stored procedure para aceptar array de IDs y hacer una sola query
         Map<Integer, List<DetalleNotaEntregaResponse>> detallesPorNota = new HashMap<>();
         
         // Inicializar listas vacías para todas las notas
         codNotasEntrega.forEach(codNota -> detallesPorNota.put(codNota, new ArrayList<>()));
         
-        // Cargar detalles para cada nota (este enfoque es más compatible con stored procedures)
-        // En el futuro, si la base de datos soporta arrays o consultas IN, se puede optimizar más
+        // Cargar detalles para cada nota
         for (Integer codNota : codNotasEntrega) {
             List<DetalleNotaEntregaResponse> detalles = listarPorNotaEntrega(codNota);
             detallesPorNota.put(codNota, detalles);
