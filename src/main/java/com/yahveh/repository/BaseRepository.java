@@ -96,8 +96,11 @@ public abstract class BaseRepository<T> {
      * Útil para inserts o updates masivos
      * 
      * @param sql SQL statement con parámetros
-     * @param batchParams Lista de arrays de parámetros, uno por operación
+     * @param batchParams Lista de arrays de parámetros, uno por operación.
+     *                    Cada array debe contener los valores en el mismo orden que los ? en el SQL.
+     *                    Los tipos de datos deben ser compatibles con JDBC (String, Integer, Long, etc.)
      * @return Array con el número de filas afectadas por cada operación
+     * @throws RuntimeException si hay error SQL o incompatibilidad de tipos
      */
     protected int[] executeBatchUpdate(String sql, List<Object[]> batchParams) {
         if (batchParams == null || batchParams.isEmpty()) {

@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Slf4j
@@ -39,7 +38,7 @@ public class NotaEntregaService {
         if (!notas.isEmpty()) {
             List<Integer> codNotasEntrega = notas.stream()
                     .map(NotaEntregaResponse::getCodNotaEntrega)
-                    .collect(Collectors.toList());
+                    .toList();
             
             Map<Integer, List<DetalleNotaEntregaResponse>> detallesPorNota = 
                     detalleRepository.listarPorNotasEntregaBatch(codNotasEntrega);
@@ -71,7 +70,7 @@ public class NotaEntregaService {
         if (!notas.isEmpty()) {
             List<Integer> codNotasEntrega = notas.stream()
                     .map(NotaEntregaResponse::getCodNotaEntrega)
-                    .collect(Collectors.toList());
+                    .toList();
             
             Map<Integer, List<DetalleNotaEntregaResponse>> detallesPorNota = 
                     detalleRepository.listarPorNotasEntregaBatch(codNotasEntrega);
@@ -92,7 +91,7 @@ public class NotaEntregaService {
         if (!notas.isEmpty()) {
             List<Integer> codNotasEntrega = notas.stream()
                     .map(NotaEntregaResponse::getCodNotaEntrega)
-                    .collect(Collectors.toList());
+                    .toList();
             
             Map<Integer, List<DetalleNotaEntregaResponse>> detallesPorNota = 
                     detalleRepository.listarPorNotasEntregaBatch(codNotasEntrega);
