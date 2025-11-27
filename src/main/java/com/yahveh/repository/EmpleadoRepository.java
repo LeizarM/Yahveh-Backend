@@ -14,15 +14,6 @@ import java.util.Optional;
 @ApplicationScoped
 public class EmpleadoRepository extends BaseRepository<Empleado> {
 
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public Long result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
 
     public static class EmpleadoDetalle {
         public Long codEmpleado;
@@ -169,7 +160,7 @@ public class EmpleadoRepository extends BaseRepository<Empleado> {
         result.errorMsg = rs.getString("p_errormsg");
 
         long resultValue = rs.getLong("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
+        result.result = rs.wasNull() ? null : AbmResult.safeLongToInteger(resultValue);
 
         return result;
     }

@@ -18,17 +18,6 @@ import java.util.Optional;
 public class InventarioRepository extends BaseRepository<Inventario> {
 
     /**
-     * Resultado de operación ABM
-     */
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public Long result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
 
     /**
      * Listar todos los movimientos de inventario
@@ -195,7 +184,7 @@ public class InventarioRepository extends BaseRepository<Inventario> {
 
         // Manejar el caso donde p_result puede ser NULL
         long resultValue = rs.getLong("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
+        result.result = rs.wasNull() ? null : AbmResult.safeLongToInteger(resultValue);
 
         return result;
     }

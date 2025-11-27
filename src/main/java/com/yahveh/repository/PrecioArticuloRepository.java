@@ -16,17 +16,6 @@ import java.util.Optional;
 public class PrecioArticuloRepository extends BaseRepository<PrecioArticulo> {
 
     /**
-     * Resultado de operación ABM
-     */
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public int result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
 
     /**
      * Listar todos los precios con información completa
@@ -217,7 +206,7 @@ public class PrecioArticuloRepository extends BaseRepository<PrecioArticulo> {
         result.errorMsg = rs.getString("p_errormsg");
 
         int resultValue = rs.getInt("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
+        result.result = rs.wasNull() ? null : Integer.valueOf(resultValue);
 
         return result;
     }

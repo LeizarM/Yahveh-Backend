@@ -91,6 +91,38 @@ public abstract class BaseRepository<T> {
         }
     }
 
+    /**
+     * Ejecutar múltiples updates en batch para mejor rendimiento
+     * Útil para inserts o updates masivos
+     * 
+     * @param sql SQL statement con parámetros
+     * @param batchParams Lista de arrays de parámetros, uno por operación.
+     *                    Cada array debe contener los valores en el mismo orden que los ? en el SQL.
+     *                    Los tipos de datos deben ser compatibles con JDBC (String, Integer, Long, etc.)
+     * @return Array con el número de filas afectadas por cada operación
+     * @throws RuntimeException si hay error SQL o incompatibilidad de tipos
+     */
+    protected int[] executeBatchUpdate(String sql, List<Object[]> batchParams) {
+        if (batchParams == null || batchParams.isEmpty()) {
+            return new int[0];
+        }
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            for (Object[] params : batchParams) {
+                setParameters(stmt, params);
+                stmt.addBatch();
+            }
+
+            return stmt.executeBatch();
+
+        } catch (SQLException e) {
+            log.error("Error ejecutando batch update: {}", sql, e);
+            throw new RuntimeException("Error en base de datos batch", e);
+        }
+    }
+
     @FunctionalInterface
     protected interface ResultSetMapper<R> {
         R map(ResultSet rs) throws SQLException;

@@ -16,17 +16,6 @@ import java.util.Optional;
 public class FamiliaRepository extends BaseRepository<Familia> {
 
     /**
-     * Resultado de operación ABM
-     */
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public int result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
 
     /**
      * Listar todas las familias con información completa
@@ -157,7 +146,7 @@ public class FamiliaRepository extends BaseRepository<Familia> {
 
         // Manejar el caso donde p_result puede ser NULL
         int resultValue = rs.getInt("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
+        result.result = rs.wasNull() ? null : Integer.valueOf(resultValue);
 
         return result;
     }

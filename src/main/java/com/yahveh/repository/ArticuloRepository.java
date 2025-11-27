@@ -16,19 +16,6 @@ import java.util.Optional;
 public class ArticuloRepository extends BaseRepository<Articulo> {
 
     /**
-     * Resultado de operación ABM
-     */
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public int result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
-
-    /**
      * Listar todos los artículos con información completa
      */
     public List<ArticuloResponse> listarTodosCompleto() {
@@ -187,7 +174,7 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
 
         // Manejar el caso donde p_result puede ser NULL
         int resultValue = rs.getInt("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
+        result.result = rs.wasNull() ? null : Integer.valueOf(resultValue);
 
         return result;
     }

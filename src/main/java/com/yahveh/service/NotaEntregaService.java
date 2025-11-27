@@ -2,6 +2,7 @@ package com.yahveh.service;
 
 import com.yahveh.dto.request.DetalleNotaEntregaRequest;
 import com.yahveh.dto.request.NotaEntregaRequest;
+import com.yahveh.dto.response.DetalleNotaEntregaResponse;
 import com.yahveh.dto.response.NotaEntregaResponse;
 import com.yahveh.repository.DetalleNotaEntregaRepository;
 import com.yahveh.repository.NotaEntregaRepository;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 @Slf4j
@@ -32,10 +34,19 @@ public class NotaEntregaService {
         log.info("Listando todas las notas de entrega");
         List<NotaEntregaResponse> notas = notaEntregaRepository.listarTodas();
 
-        // Cargar detalles para cada nota
-        notas.forEach(nota -> {
-            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
-        });
+        // Cargar detalles en batch para evitar N+1 queries
+        if (!notas.isEmpty()) {
+            List<Integer> codNotasEntrega = notas.stream()
+                    .map(NotaEntregaResponse::getCodNotaEntrega)
+                    .toList();
+            
+            Map<Integer, List<DetalleNotaEntregaResponse>> detallesPorNota = 
+                    detalleRepository.listarPorNotasEntregaBatch(codNotasEntrega);
+            
+            notas.forEach(nota -> {
+                nota.setDetalles(detallesPorNota.getOrDefault(nota.getCodNotaEntrega(), List.of()));
+            });
+        }
 
         return notas;
     }
@@ -55,9 +66,19 @@ public class NotaEntregaService {
         log.info("Listando notas de entrega del cliente: {}", codCliente);
         List<NotaEntregaResponse> notas = notaEntregaRepository.listarPorCliente(codCliente);
 
-        notas.forEach(nota -> {
-            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
-        });
+        // Cargar detalles en batch para evitar N+1 queries
+        if (!notas.isEmpty()) {
+            List<Integer> codNotasEntrega = notas.stream()
+                    .map(NotaEntregaResponse::getCodNotaEntrega)
+                    .toList();
+            
+            Map<Integer, List<DetalleNotaEntregaResponse>> detallesPorNota = 
+                    detalleRepository.listarPorNotasEntregaBatch(codNotasEntrega);
+            
+            notas.forEach(nota -> {
+                nota.setDetalles(detallesPorNota.getOrDefault(nota.getCodNotaEntrega(), List.of()));
+            });
+        }
 
         return notas;
     }
@@ -66,9 +87,19 @@ public class NotaEntregaService {
         log.info("Listando notas de entrega entre {} y {}", fechaDesde, fechaHasta);
         List<NotaEntregaResponse> notas = notaEntregaRepository.listarPorFechas(fechaDesde, fechaHasta);
 
-        notas.forEach(nota -> {
-            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
-        });
+        // Cargar detalles en batch para evitar N+1 queries
+        if (!notas.isEmpty()) {
+            List<Integer> codNotasEntrega = notas.stream()
+                    .map(NotaEntregaResponse::getCodNotaEntrega)
+                    .toList();
+            
+            Map<Integer, List<DetalleNotaEntregaResponse>> detallesPorNota = 
+                    detalleRepository.listarPorNotasEntregaBatch(codNotasEntrega);
+            
+            notas.forEach(nota -> {
+                nota.setDetalles(detallesPorNota.getOrDefault(nota.getCodNotaEntrega(), List.of()));
+            });
+        }
 
         return notas;
     }

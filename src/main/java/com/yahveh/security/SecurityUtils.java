@@ -10,23 +10,33 @@ public class SecurityUtils {
     @Inject
     JsonWebToken jwt;
 
+    // Cache para evitar parsing repetido de claims en la misma petición
+    // Thread-safe: @RequestScoped garantiza una instancia por petición HTTP
+    private Integer cachedUserId;
+    private String cachedUserType;
+
     /**
      * Obtener el ID del usuario actual desde el JWT
+     * Cached para evitar parsing repetido en la misma petición
      */
     public int getCurrentUserId() {
+        if (cachedUserId != null) {
+            return cachedUserId;
+        }
+
         Object claim = jwt.getClaim("codUsuario");
         if (claim == null) {
             throw new IllegalStateException("codUsuario no encontrado en el token");
         }
 
-        // Manejar diferentes tipos de retorno
-        if (claim instanceof Integer) {
-            return (int) claim;
-        } else if (claim instanceof Number) {
-            return ((Number) claim).intValue();
+        // Optimizado: Manejar diferentes tipos de retorno
+        if (claim instanceof Number) {
+            cachedUserId = ((Number) claim).intValue();
         } else {
-            return Integer.parseInt(claim.toString());
+            cachedUserId = Integer.parseInt(claim.toString());
         }
+        
+        return cachedUserId;
     }
 
     /**
@@ -45,10 +55,16 @@ public class SecurityUtils {
 
     /**
      * Obtener el tipo de usuario actual
+     * Cached para evitar parsing repetido en la misma petición
      */
     public String getCurrentUserType() {
+        if (cachedUserType != null) {
+            return cachedUserType;
+        }
+        
         Object claim = jwt.getClaim("tipoUsuario");
-        return claim != null ? claim.toString() : null;
+        cachedUserType = claim != null ? claim.toString() : null;
+        return cachedUserType;
     }
 
     /**

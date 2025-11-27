@@ -16,17 +16,6 @@ import java.util.Optional;
 public class ZonaRepository extends BaseRepository<Zona> {
 
     /**
-     * Resultado de operación ABM
-     */
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public int result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
 
     /**
      * Listar todas las zonas con información completa

@@ -17,19 +17,6 @@ import java.util.Optional;
 public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
 
     /**
-     * Resultado de operación ABM
-     */
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public int result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
-
-    /**
      * Listar todas las notas de entrega
      */
     public List<NotaEntregaResponse> listarTodas() {
@@ -177,7 +164,7 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
         result.errorMsg = rs.getString("p_errormsg");
 
         int resultValue = rs.getInt("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
+        result.result = rs.wasNull() ? null : Integer.valueOf(resultValue);
 
         return result;
     }

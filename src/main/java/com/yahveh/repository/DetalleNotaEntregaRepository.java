@@ -8,25 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @ApplicationScoped
 public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntrega> {
-
-    /**
-     * Resultado de operación ABM
-     */
-    public static class AbmResult {
-        public int error;
-        public String errorMsg;
-        public int result;
-
-        public boolean isSuccess() {
-            return error == 0;
-        }
-    }
 
     /**
      * Listar detalles por nota de entrega
@@ -34,6 +21,50 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
     public List<DetalleNotaEntregaResponse> listarPorNotaEntrega(int codNotaEntrega) {
         String sql = "SELECT * FROM p_list_detalle_nota_entrega(p_codnotaentrega := ?)";
         return executeQueryList(sql, this::mapDetalleResponse, codNotaEntrega);
+    }
+
+    /**
+     * Listar detalles para múltiples notas de entrega
+     * 
+     * NOTA IMPORTANTE: Esta implementación ejecuta N consultas en un loop debido a limitaciones
+     * de los stored procedures actuales. Para una verdadera optimización batch, se requeriría:
+     * 1. Modificar el stored procedure p_list_detalle_nota_entrega para aceptar un array de IDs
+     * 2. O crear un nuevo stored procedure que haga JOIN y filtre por múltiples notas
+     * 
+     * La ventaja actual es que centraliza la lógica y facilita la migración futura a una
+     * solución batch real cuando se actualicen los stored procedures.
+     * 
+     * @param codNotasEntrega Lista de códigos de notas de entrega
+     * @return Map con codNotaEntrega como clave y lista de detalles como valor
+     */
+    public Map<Integer, List<DetalleNotaEntregaResponse>> listarPorNotasEntregaBatch(List<Integer> codNotasEntrega) {
+        if (codNotasEntrega == null || codNotasEntrega.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        // Si solo hay una nota, usar el método individual
+        if (codNotasEntrega.size() == 1) {
+            int codNota = codNotasEntrega.get(0);
+            List<DetalleNotaEntregaResponse> detalles = listarPorNotaEntrega(codNota);
+            Map<Integer, List<DetalleNotaEntregaResponse>> result = new HashMap<>();
+            result.put(codNota, detalles);
+            return result;
+        }
+
+        // Para múltiples notas, ejecutar consultas individuales
+        // TODO: Actualizar stored procedure para aceptar array de IDs y hacer una sola query
+        Map<Integer, List<DetalleNotaEntregaResponse>> detallesPorNota = new HashMap<>();
+        
+        // Inicializar listas vacías para todas las notas
+        codNotasEntrega.forEach(codNota -> detallesPorNota.put(codNota, new ArrayList<>()));
+        
+        // Cargar detalles para cada nota
+        for (Integer codNota : codNotasEntrega) {
+            List<DetalleNotaEntregaResponse> detalles = listarPorNotaEntrega(codNota);
+            detallesPorNota.put(codNota, detalles);
+        }
+
+        return detallesPorNota;
     }
 
     /**
@@ -164,7 +195,7 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
         result.errorMsg = rs.getString("p_errormsg");
 
         int resultValue = rs.getInt("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
+        result.result = rs.wasNull() ? null : Integer.valueOf(resultValue);
 
         return result;
     }
