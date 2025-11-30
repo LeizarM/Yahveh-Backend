@@ -1,16 +1,20 @@
 package com.yahveh.repository;
 
+import com.yahveh.dto.NotaEntregaReporteDTO;
 import com.yahveh.dto.response.NotaEntregaResponse;
 import com.yahveh.exception.BusinessException;
+import com.yahveh.exception.NotFoundException;
 import com.yahveh.model.NotaEntrega;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @ApplicationScoped
@@ -146,6 +150,94 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
             log.error("Error al eliminar nota de entrega. Código: {}, Mensaje: {}", result.error, result.errorMsg);
             throw new BusinessException(result.errorMsg);
         }
+    }
+
+
+    /**
+     * Obtener datos completos para el reporte
+     */
+    public NotaEntregaReporteDTO obtenerDatosReporte(long codNotaEntrega) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_codnotaentrega := ?, p_accion := 'R')";
+
+        List<Map<String, Object>> resultados = new ArrayList<>();
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, codNotaEntrega);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+
+                    // Encabezado
+                    row.put("codNotaEntrega", rs.getLong("cod_nota_entrega"));
+                    row.put("fecha", rs.getDate("fecha").toLocalDate());
+                    row.put("codCliente", rs.getLong("cod_cliente"));
+                    row.put("nombreCliente", rs.getString("nombre_cliente"));
+                    row.put("nit", rs.getString("nit"));
+                    row.put("razonSocial", rs.getString("razon_social"));
+                    row.put("direccion", rs.getString("direccion"));
+                    row.put("zona", rs.getString("zona"));
+                    row.put("telefonos", rs.getString("telefonos"));
+                    row.put("totalGeneral", rs.getFloat("total_general"));
+                    row.put("totalSinFactura", rs.getFloat("total_sin_factura"));
+                    row.put("totalArticulos", rs.getInt("total_articulos"));
+
+                    // Detalle
+                    row.put("codArticulo", rs.getString("cod_articulo"));
+                    row.put("lineaArticulo", rs.getString("linea_articulo"));
+                    row.put("descripcionArticulo", rs.getString("descripcion_articulo"));
+                    row.put("cantidad", rs.getInt("cantidad"));
+                    row.put("precioUnitario", rs.getFloat("precio_unitario"));
+                    row.put("precioTotal", rs.getFloat("precio_total"));
+                    row.put("precioSinFactura", rs.getFloat("precio_sin_factura"));
+                    row.put("subtotalSinFactura", rs.getFloat("subtotal_sin_factura"));
+
+                    resultados.add(row);
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error al obtener datos del reporte", e);
+            throw new RuntimeException("Error al obtener datos del reporte", e);
+        }
+
+        if (resultados.isEmpty()) {
+            throw new NotFoundException("Nota de entrega no encontrada");
+        }
+
+        // Construir el DTO
+        Map<String, Object> primerRegistro = resultados.get(0);
+
+        List<NotaEntregaReporteDTO.DetalleArticuloDTO> detalles = resultados.stream()
+                .filter(row -> row.get("codArticulo") != null)
+                .map(row -> NotaEntregaReporteDTO.DetalleArticuloDTO.builder()
+                        .codArticulo((String) row.get("codArticulo"))
+                        .lineaArticulo((String) row.get("lineaArticulo"))
+                        .descripcionArticulo((String) row.get("descripcionArticulo"))
+                        .cantidad((Integer) row.get("cantidad"))
+                        .precioUnitario((Float) row.get("precioUnitario"))
+                        .precioTotal((Float) row.get("precioTotal"))
+                        .precioSinFactura((Float) row.get("precioSinFactura"))
+                        .subtotalSinFactura((Float) row.get("subtotalSinFactura"))
+                        .build())
+                .collect(Collectors.toList());
+
+        return NotaEntregaReporteDTO.builder()
+                .codNotaEntrega((Long) primerRegistro.get("codNotaEntrega"))
+                .fecha((LocalDate) primerRegistro.get("fecha"))
+                .codCliente((Long) primerRegistro.get("codCliente"))
+                .nombreCliente((String) primerRegistro.get("nombreCliente"))
+                .nit((String) primerRegistro.get("nit"))
+                .razonSocial((String) primerRegistro.get("razonSocial"))
+                .direccion((String) primerRegistro.get("direccion"))
+                .zona((String) primerRegistro.get("zona"))
+                .telefonos((String) primerRegistro.get("telefonos"))
+                .totalConFactura((Float) primerRegistro.get("totalGeneral"))
+                .totalSinFactura((Float) primerRegistro.get("totalSinFactura"))
+                .totalArticulos((Integer) primerRegistro.get("totalArticulos"))
+                .detalles(detalles)
+                .build();
     }
 
     /**

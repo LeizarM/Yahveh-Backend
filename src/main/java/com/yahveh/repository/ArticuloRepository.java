@@ -21,7 +21,7 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
     public static class AbmResult {
         public int error;
         public String errorMsg;
-        public int result;
+        public String result;  // Cambiado de int a String
 
         public boolean isSuccess() {
             return error == 0;
@@ -76,7 +76,7 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
     /**
      * Crear nuevo artículo con manejo de errores
      */
-    public int crearArticulo(Articulo articulo) {
+    public String crearArticulo(Articulo articulo) {  // Retorna String ahora
         String sql = "SELECT p_error, p_errormsg, p_result " +
                 "FROM p_abm_articulo(" +
                 "p_codarticulo := ?, " +
@@ -89,7 +89,7 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
         AbmResult result = executeQuerySingle(
                 sql,
                 this::mapAbmResult,
-                articulo.getCodArticulo(),
+                articulo.getCodArticulo(),  // Puede ser NULL para auto-generar
                 articulo.getCodLinea(),
                 articulo.getDescripcion(),
                 articulo.getDescripcion2(),
@@ -101,8 +101,8 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
             throw new BusinessException(result.errorMsg);
         }
 
-        log.info("Artículo creado exitosamente con ID: {}", result.result);
-        return result.result;
+        log.info("Artículo creado exitosamente con código: {}", result.result);
+        return result.result;  // Retorna el código generado
     }
 
     /**
@@ -184,11 +184,7 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
         AbmResult result = new AbmResult();
         result.error = rs.getInt("p_error");
         result.errorMsg = rs.getString("p_errormsg");
-
-        // Manejar el caso donde p_result puede ser NULL
-        int resultValue = rs.getInt("p_result");
-        result.result = rs.wasNull() ? null : resultValue;
-
+        result.result = rs.getString("p_result");  // Ahora es String
         return result;
     }
 }

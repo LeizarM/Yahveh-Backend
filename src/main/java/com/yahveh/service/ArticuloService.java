@@ -49,19 +49,18 @@ public class ArticuloService {
     /**
      * Crear nuevo artículo
      */
-    public int crearArticulo(ArticuloRequest request, int audUsuario) {
+    public String crearArticulo(ArticuloRequest request, int audUsuario) {  // Retorna String
         log.info("Creando nuevo artículo: {}", request.getCodArticulo());
 
-
         Articulo articulo = Articulo.builder()
-                .codArticulo(request.getCodArticulo().toUpperCase().trim())
+                .codArticulo(request.getCodArticulo())  // Puede ser NULL para auto-generar
                 .codLinea(request.getCodLinea())
                 .descripcion(request.getDescripcion())
                 .descripcion2(request.getDescripcion2())
                 .audUsuario(audUsuario)
                 .build();
 
-        int codArticulo = articuloRepository.crearArticulo(articulo);
+        String codArticulo = articuloRepository.crearArticulo(articulo);
 
         log.info("Artículo creado exitosamente: {}", codArticulo);
         return codArticulo;

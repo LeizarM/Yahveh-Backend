@@ -1,5 +1,6 @@
 package com.yahveh.service;
 
+import com.yahveh.dto.NotaEntregaReporteDTO;
 import com.yahveh.dto.request.DetalleNotaEntregaRequest;
 import com.yahveh.dto.request.NotaEntregaRequest;
 import com.yahveh.dto.response.NotaEntregaResponse;
@@ -13,7 +14,8 @@ import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.time.ZoneId;
+import java.util.*;
 
 @ApplicationScoped
 @Slf4j
@@ -27,6 +29,9 @@ public class NotaEntregaService {
 
     @Inject
     SecurityUtils securityUtils;
+
+    @Inject
+    ReporteService reporteService;
 
     public List<NotaEntregaResponse> listar() {
         log.info("Listando todas las notas de entrega");
@@ -130,5 +135,63 @@ public class NotaEntregaService {
         int audUsuario = securityUtils.getCurrentUserId();
 
         notaEntregaRepository.eliminarNotaEntrega(codNotaEntrega, audUsuario);
+    }
+
+
+    public byte[] generarPDF(Long codNotaEntrega) {
+        log.info("Generando PDF para nota de entrega: {}", codNotaEntrega);
+
+        // Obtener datos del reporte
+        NotaEntregaReporteDTO reporte = notaEntregaRepository.obtenerDatosReporte(codNotaEntrega);
+
+        // Crear lista duplicada con campo tipoCopia
+        List<Map<String, Object>> detallesDuplicados = new ArrayList<>();
+
+        // Primera copia: CLIENTE
+        for (NotaEntregaReporteDTO.DetalleArticuloDTO detalle : reporte.getDetalles()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("codArticulo", detalle.getCodArticulo());
+            item.put("lineaArticulo", detalle.getLineaArticulo());
+            item.put("descripcionArticulo", detalle.getDescripcionArticulo());
+            item.put("cantidad", detalle.getCantidad());
+            item.put("precioUnitario", detalle.getPrecioUnitario());
+            item.put("precioTotal", detalle.getPrecioTotal());
+            item.put("precioSinFactura", detalle.getPrecioSinFactura());
+            item.put("subtotalSinFactura", detalle.getSubtotalSinFactura());
+            item.put("tipoCopia", "COPIA CLIENTE");
+            detallesDuplicados.add(item);
+        }
+
+        // Segunda copia: EMPLEADO
+        for (NotaEntregaReporteDTO.DetalleArticuloDTO detalle : reporte.getDetalles()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("codArticulo", detalle.getCodArticulo());
+            item.put("lineaArticulo", detalle.getLineaArticulo());
+            item.put("descripcionArticulo", detalle.getDescripcionArticulo());
+            item.put("cantidad", detalle.getCantidad());
+            item.put("precioUnitario", detalle.getPrecioUnitario());
+            item.put("precioTotal", detalle.getPrecioTotal());
+            item.put("precioSinFactura", detalle.getPrecioSinFactura());
+            item.put("subtotalSinFactura", detalle.getSubtotalSinFactura());
+            item.put("tipoCopia", "COPIA EMPLEADO");
+            detallesDuplicados.add(item);
+        }
+
+        // Preparar parámetros
+        Map<String, Object> parametros = new HashMap<>();
+        parametros.put("codNotaEntrega", reporte.getCodNotaEntrega());
+        parametros.put("fecha", java.sql.Date.valueOf(reporte.getFecha()));
+        parametros.put("codCliente", reporte.getCodCliente());
+        parametros.put("nombreCliente", reporte.getNombreCliente());
+        parametros.put("nit", reporte.getNit());
+        parametros.put("razonSocial", reporte.getRazonSocial());
+        parametros.put("direccion", reporte.getDireccion());
+        parametros.put("zona", reporte.getZona());
+        parametros.put("telefonos", reporte.getTelefonos());
+        parametros.put("totalConFactura", reporte.getTotalConFactura());
+        parametros.put("totalSinFactura", reporte.getTotalSinFactura());
+
+        // Generar PDF con ambas copias
+        return reporteService.generarReportePDF("nota_entrega", parametros, detallesDuplicados);
     }
 }

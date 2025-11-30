@@ -63,9 +63,12 @@ public class ArticuloResource {
     @RolesAllowed({"lim", "admin"})
     public Response crearArticulo(@Valid ArticuloRequest request) {
         int codUsuario = securityUtils.getCurrentUserId();
-        log.info("POST /api/articulos - Usuario: {} - Creando: {}", securityUtils.getCurrentUsername(), request.getCodArticulo());
+        log.info("POST /api/articulos - Usuario: {} - Creando: {}",
+                securityUtils.getCurrentUsername(),
+                request.getCodArticulo());
 
-        int codArticulo = articuloService.crearArticulo(request, codUsuario);
+        String codArticulo = articuloService.crearArticulo(request, codUsuario);
+
         return Response.status(Response.Status.CREATED)
                 .entity(ApiResponse.success("Artículo creado exitosamente", codArticulo))
                 .build();
