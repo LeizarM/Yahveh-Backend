@@ -31,19 +31,28 @@
 
 ####################################################################################
 
-## Stage 1: Build nativo con GraalVM
-FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:22.3-java17 AS build
+## Stage 1: Build nativo con Mandrel
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+
 COPY --chown=quarkus:quarkus mvnw /code/mvnw
 COPY --chown=quarkus:quarkus .mvn /code/.mvn
 COPY --chown=quarkus:quarkus pom.xml /code/
+
 USER quarkus
 WORKDIR /code
-RUN ./mvnw -B org.apache.maven.plugins:maven-dependency-plugin:3.1.2:go-offline
+
+# Descargar dependencias (cache layer)
+RUN ./mvnw -B org.apache.maven.plugins:maven-dependency-plugin:3.6.1:go-offline
+
+# Copiar código fuente
 COPY src /code/src
-RUN ./mvnw package -Pnative
+
+# Build nativo
+RUN ./mvnw package -Pnative -DskipTests
 
 ## Stage 2: Imagen final mínima
 FROM quay.io/quarkus/quarkus-micro-image:2.0
+
 WORKDIR /work/
 COPY --from=build /code/target/*-runner /work/application
 
