@@ -1,9 +1,8 @@
-*
-!target/*-runner
-!target/*-runner.jar
-!target/lib/*
-!target/quarkus-app/*
-!src
-!pom.xml
-!mvnw
-!.mvn
+# Ignorar archivos innecesarios  
+target/*  
+!target/quarkus-app  
+.git  
+.gitignore  
+*.md  
+.idea  
+*.iml
