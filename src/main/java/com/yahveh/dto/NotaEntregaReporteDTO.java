@@ -24,6 +24,8 @@ public class NotaEntregaReporteDTO {
     private String direccion;
     private String zona;
     private String telefonos;
+    private int estado;
+    private String estadoTexto;
 
     // Totales
     private float totalConFactura;

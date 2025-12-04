@@ -16,4 +16,5 @@ public class NotaEntregaRequest {
     private String direccion;
     private String zona;
     private List<DetalleNotaEntregaRequest> detalles;
+
 }

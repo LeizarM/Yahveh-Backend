@@ -16,5 +16,7 @@ public class NotaEntrega {
     private LocalDate fecha;
     private String direccion;
     private String zona;
+    private int estado;
+    private String estadoTexto;
     private int audUsuario;
 }

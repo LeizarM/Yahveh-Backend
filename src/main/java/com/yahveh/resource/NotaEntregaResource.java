@@ -28,11 +28,40 @@ public class NotaEntregaResource {
     @Inject
     SecurityUtils securityUtils;
 
+    /**
+     * Listar solo notas válidas
+     */
     @GET
     public Response listar() {
         log.info("GET /api/notas-entrega - Usuario: {}", securityUtils.getCurrentUsername());
 
         List<NotaEntregaResponse> notas = notaEntregaService.listar();
+
+        return Response.ok(ApiResponse.success("Operación exitosa", notas)).build();
+    }
+
+    /**
+     * ⭐ Listar todas las notas (válidas y anuladas)
+     */
+    @GET
+    @Path("/todas")
+    public Response listarTodas() {
+        log.info("GET /api/notas-entrega/todas - Usuario: {}", securityUtils.getCurrentUsername());
+
+        List<NotaEntregaResponse> notas = notaEntregaService.listarTodasConAnuladas();
+
+        return Response.ok(ApiResponse.success("Operación exitosa", notas)).build();
+    }
+
+    /**
+     * ⭐ Listar solo notas anuladas
+     */
+    @GET
+    @Path("/anuladas")
+    public Response listarAnuladas() {
+        log.info("GET /api/notas-entrega/anuladas - Usuario: {}", securityUtils.getCurrentUsername());
+
+        List<NotaEntregaResponse> notas = notaEntregaService.listarAnuladas();
 
         return Response.ok(ApiResponse.success("Operación exitosa", notas)).build();
     }
@@ -93,6 +122,19 @@ public class NotaEntregaResource {
         NotaEntregaResponse nota = notaEntregaService.actualizar(codNotaEntrega, request);
 
         return Response.ok(ApiResponse.success("Nota de entrega actualizada exitosamente", nota)).build();
+    }
+
+    /**
+     * ⭐ ANULAR nota de entrega (devuelve stock automáticamente)
+     */
+    @PUT
+    @Path("/{codNotaEntrega}/anular")
+    public Response anular(@PathParam("codNotaEntrega") int codNotaEntrega) {
+        log.info("PUT /api/notas-entrega/{}/anular - Usuario: {}", codNotaEntrega, securityUtils.getCurrentUsername());
+
+        NotaEntregaResponse nota = notaEntregaService.anular(codNotaEntrega);
+
+        return Response.ok(ApiResponse.success("Nota de entrega anulada exitosamente. Stock devuelto al inventario", nota)).build();
     }
 
     @DELETE

@@ -20,6 +20,8 @@ public class NotaEntregaResponse {
     private LocalDate fecha;
     private String direccion;
     private String zona;
+    private int estado;
+    private String estadoTexto;
     private int audUsuario;
     private LocalDateTime audFecha;
     private List<DetalleNotaEntregaResponse> detalles;

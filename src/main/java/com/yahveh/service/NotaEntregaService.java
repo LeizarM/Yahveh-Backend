@@ -14,7 +14,6 @@ import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.*;
 
 @ApplicationScoped
@@ -33,11 +32,42 @@ public class NotaEntregaService {
     @Inject
     ReporteService reporteService;
 
+    /**
+     * Listar solo notas válidas
+     */
     public List<NotaEntregaResponse> listar() {
-        log.info("Listando todas las notas de entrega");
+        log.info("Listando todas las notas de entrega válidas");
         List<NotaEntregaResponse> notas = notaEntregaRepository.listarTodas();
 
         // Cargar detalles para cada nota
+        notas.forEach(nota -> {
+            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
+        });
+
+        return notas;
+    }
+
+    /**
+     * Listar todas las notas (válidas y anuladas)
+     */
+    public List<NotaEntregaResponse> listarTodasConAnuladas() {
+        log.info("Listando todas las notas de entrega (válidas y anuladas)");
+        List<NotaEntregaResponse> notas = notaEntregaRepository.listarTodasConAnuladas();
+
+        notas.forEach(nota -> {
+            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
+        });
+
+        return notas;
+    }
+
+    /**
+     * Listar solo notas anuladas
+     */
+    public List<NotaEntregaResponse> listarAnuladas() {
+        log.info("Listando notas de entrega anuladas");
+        List<NotaEntregaResponse> notas = notaEntregaRepository.listarAnuladas();
+
         notas.forEach(nota -> {
             nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
         });
@@ -82,9 +112,10 @@ public class NotaEntregaService {
     public NotaEntregaResponse crear(NotaEntregaRequest request) {
         log.info("Creando nota de entrega para cliente: {}", request.getCodCliente());
 
-        int audUsuario = securityUtils.getCurrentUserId();
+        long audUsuario = securityUtils.getCurrentUserId();
 
-        // Crear la nota de entrega
+        // Crear la nota de entrega (siempre con estado = 1 VÁLIDO)
+        // ⭐ Ahora incluye codEmpleado
         long codNotaEntrega = notaEntregaRepository.crearNotaEntrega(
                 request.getCodCliente(),
                 request.getFecha(),
@@ -102,7 +133,7 @@ public class NotaEntregaService {
                         detalle.getCantidad(),
                         detalle.getPrecioUnitario(),
                         detalle.getPrecioSinFactura(),
-                        audUsuario
+                        (int) audUsuario
                 );
             }
         }
@@ -114,16 +145,30 @@ public class NotaEntregaService {
     public NotaEntregaResponse actualizar(int codNotaEntrega, NotaEntregaRequest request) {
         log.info("Actualizando nota de entrega: {}", codNotaEntrega);
 
-        int audUsuario = securityUtils.getCurrentUserId();
+        long audUsuario = securityUtils.getCurrentUserId();
 
+        // ⭐ Ya no se pasa codCliente (no se puede cambiar el cliente)
         notaEntregaRepository.actualizarNotaEntrega(
                 codNotaEntrega,
-                request.getCodCliente(),
                 request.getFecha(),
                 request.getDireccion(),
                 request.getZona(),
                 audUsuario
         );
+
+        return buscarPorCodigo(codNotaEntrega);
+    }
+
+    /**
+     * ⭐ ANULAR nota de entrega (devuelve stock automáticamente)
+     */
+    @Transactional
+    public NotaEntregaResponse anular(int codNotaEntrega) {
+        log.info("Anulando nota de entrega: {}", codNotaEntrega);
+
+        int audUsuario = securityUtils.getCurrentUserId();
+
+        notaEntregaRepository.anularNotaEntrega(codNotaEntrega, audUsuario);
 
         return buscarPorCodigo(codNotaEntrega);
     }
@@ -136,7 +181,6 @@ public class NotaEntregaService {
 
         notaEntregaRepository.eliminarNotaEntrega(codNotaEntrega, audUsuario);
     }
-
 
     public byte[] generarPDF(Long codNotaEntrega) {
         log.info("Generando PDF para nota de entrega: {}", codNotaEntrega);
@@ -188,6 +232,8 @@ public class NotaEntregaService {
         parametros.put("direccion", reporte.getDireccion());
         parametros.put("zona", reporte.getZona());
         parametros.put("telefonos", reporte.getTelefonos());
+        parametros.put("estado", reporte.getEstado());                  // ⭐ Nuevo
+        parametros.put("estadoTexto", reporte.getEstadoTexto());        // ⭐ Nuevo
         parametros.put("totalConFactura", reporte.getTotalConFactura());
         parametros.put("totalSinFactura", reporte.getTotalSinFactura());
 

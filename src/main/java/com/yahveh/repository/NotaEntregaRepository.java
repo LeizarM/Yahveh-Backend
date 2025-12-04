@@ -26,71 +26,85 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
     public static class AbmResult {
         public int error;
         public String errorMsg;
-        public int result;
+        public Integer result;
 
         public boolean isSuccess() {
             return error == 0;
         }
     }
 
-    /**
-     * Listar todas las notas de entrega
-     */
     public List<NotaEntregaResponse> listarTodas() {
-        String sql = "SELECT * FROM p_list_nota_entrega()";
+        String sql = "SELECT * FROM p_list_nota_entrega(p_estado := 1)";
         return executeQueryList(sql, this::mapNotaEntregaResponse);
     }
+
+
+    /**
+     * Listar todas las notas (válidas y anuladas)
+     */
+    public List<NotaEntregaResponse> listarTodasConAnuladas() {
+        String sql = "SELECT * FROM p_list_nota_entrega()"; // sin filtros
+        return executeQueryList(sql, this::mapNotaEntregaResponse);
+    }
+
+
+    /**
+     * Listar solo notas anuladas
+     */
+    public List<NotaEntregaResponse> listarAnuladas() {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_estado := 0)";
+        return executeQueryList(sql, this::mapNotaEntregaResponse);
+    }
+
 
     /**
      * Buscar nota de entrega por código
      */
-    public Optional<NotaEntregaResponse> buscarPorCodigo(int codNotaEntrega) {
+    public Optional<NotaEntregaResponse> buscarPorCodigo(long codNotaEntrega) {
         String sql = "SELECT * FROM p_list_nota_entrega(p_codnotaentrega := ?)";
         return executeQuerySingle(sql, this::mapNotaEntregaResponse, codNotaEntrega);
     }
 
     /**
-     * Listar notas de entrega por cliente
+     * Listar notas de entrega por cliente (solo válidas)
      */
-    public List<NotaEntregaResponse> listarPorCliente(int codCliente) {
-        String sql = "SELECT * FROM p_list_nota_entrega(p_codcliente := ?)";
+    public List<NotaEntregaResponse> listarPorCliente(long codCliente) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_codcliente := ?, p_estado := 1)";
         return executeQueryList(sql, this::mapNotaEntregaResponse, codCliente);
     }
 
     /**
-     * Listar notas de entrega por rango de fechas
+     * Listar notas de entrega por rango de fechas (solo válidas)
      */
     public List<NotaEntregaResponse> listarPorFechas(LocalDate fechaDesde, LocalDate fechaHasta) {
-        String sql = "SELECT * FROM p_list_nota_entrega(p_fecha_desde := ?, p_fecha_hasta := ?)";
+        String sql = "SELECT * FROM p_list_nota_entrega(p_fecha_desde := ?, p_fecha_hasta := ?, p_estado := 1)";
         return executeQueryList(sql, this::mapNotaEntregaResponse, fechaDesde, fechaHasta);
     }
 
     /**
      * Crear nueva nota de entrega
      */
-    public int crearNotaEntrega(int codCliente, LocalDate fecha, String direccion,
-                                 String zona, int audUsuario) {
-        String sql = "SELECT p_error, p_errormsg, p_result " +
-                "FROM p_abm_nota_entrega(" +
-                "p_codcliente := ?, " +
-                "p_fecha := ?, " +
-                "p_direccion := ?, " +
-                "p_zona := ?, " +
-                "p_audusuario := ?, " +
-                "p_accion := 'I')";
+    public int crearNotaEntrega(long codCliente, LocalDate fecha,
+                                String direccion, String zona, long audUsuario) {
+        String sql = """
+        SELECT p_error, p_errormsg, p_result 
+        FROM p_abm_nota_entrega(
+            p_codcliente := ?::BIGINT, 
+            p_fecha := ?::DATE, 
+            p_direccion := ?::VARCHAR, 
+            p_zona := ?::VARCHAR, 
+            p_audusuario := ?::BIGINT, 
+            p_accion := 'I'::VARCHAR
+        )
+        """;
 
-        AbmResult result = executeQuerySingle(
-                sql,
-                this::mapAbmResult,
-                codCliente,
-                fecha,
-                direccion,
-                zona,
-                audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+        AbmResult result = executeQuerySingle(sql, this::mapAbmResult,
+                codCliente, fecha, direccion, zona, audUsuario)
+                .orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
 
         if (!result.isSuccess()) {
-            log.error("Error al crear nota de entrega. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            log.error("Error al crear nota de entrega. Código: {}, Mensaje: {}",
+                    result.error, result.errorMsg);
             throw new BusinessException(result.errorMsg);
         }
 
@@ -100,31 +114,49 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
     /**
      * Actualizar nota de entrega
      */
-    public void actualizarNotaEntrega(int codNotaEntrega, int codCliente, LocalDate fecha,
-                                      String direccion, String zona, int audUsuario) {
-        String sql = "SELECT p_error, p_errormsg, p_result " +
-                "FROM p_abm_nota_entrega(" +
-                "p_codnotaentrega := ?, " +
-                "p_codcliente := ?, " +
-                "p_fecha := ?, " +
-                "p_direccion := ?, " +
-                "p_zona := ?, " +
-                "p_audusuario := ?, " +
-                "p_accion := 'U')";
+    public void actualizarNotaEntrega(long codNotaEntrega, LocalDate fecha,
+                                      String direccion, String zona, long audUsuario) {
+        String sql = """
+        SELECT p_error, p_errormsg, p_result 
+        FROM p_abm_nota_entrega(
+            p_codnotaentrega := ?::BIGINT, 
+            p_fecha := ?::DATE, 
+            p_direccion := ?::VARCHAR, 
+            p_zona := ?::VARCHAR, 
+            p_audusuario := ?::BIGINT, 
+            p_accion := 'U'::VARCHAR
+        )
+        """;
 
-        AbmResult result = executeQuerySingle(
-                sql,
-                this::mapAbmResult,
-                codNotaEntrega,
-                codCliente,
-                fecha,
-                direccion,
-                zona,
-                audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+        AbmResult result = executeQuerySingle(sql, this::mapAbmResult,
+                codNotaEntrega, fecha, direccion, zona, audUsuario)
+                .orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
 
         if (!result.isSuccess()) {
-            log.error("Error al actualizar nota de entrega. Código: {}, Mensaje: {}", result.error, result.errorMsg);
+            log.error("Error al actualizar. Código: {}, Mensaje: {}",
+                    result.error, result.errorMsg);
+            throw new BusinessException(result.errorMsg);
+        }
+    }
+
+    /**
+     * Anular nota de entrega
+     */
+    public void anularNotaEntrega(long codNotaEntrega, long audUsuario) {
+        String sql = """
+        SELECT p_error, p_errormsg, p_result 
+        FROM p_abm_nota_entrega(
+            p_codnotaentrega := ?::BIGINT, 
+            p_audusuario := ?::BIGINT, 
+            p_accion := 'A'::VARCHAR
+        )
+        """;
+
+        AbmResult result = executeQuerySingle(sql, this::mapAbmResult,
+                codNotaEntrega, audUsuario)
+                .orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+
+        if (!result.isSuccess()) {
             throw new BusinessException(result.errorMsg);
         }
     }
@@ -132,26 +164,24 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
     /**
      * Eliminar nota de entrega
      */
-    public void eliminarNotaEntrega(int codNotaEntrega, int audUsuario) {
-        String sql = "SELECT p_error, p_errormsg, p_result " +
-                "FROM p_abm_nota_entrega(" +
-                "p_codnotaentrega := ?, " +
-                "p_audusuario := ?, " +
-                "p_accion := 'D')";
+    public void eliminarNotaEntrega(long codNotaEntrega, long audUsuario) {
+        String sql = """
+        SELECT p_error, p_errormsg, p_result 
+        FROM p_abm_nota_entrega(
+            p_codnotaentrega := ?::BIGINT, 
+            p_audusuario := ?::BIGINT, 
+            p_accion := 'D'::VARCHAR
+        )
+        """;
 
-        AbmResult result = executeQuerySingle(
-                sql,
-                this::mapAbmResult,
-                codNotaEntrega,
-                audUsuario
-        ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
+        AbmResult result = executeQuerySingle(sql, this::mapAbmResult,
+                codNotaEntrega, audUsuario)
+                .orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
 
         if (!result.isSuccess()) {
-            log.error("Error al eliminar nota de entrega. Código: {}, Mensaje: {}", result.error, result.errorMsg);
             throw new BusinessException(result.errorMsg);
         }
     }
-
 
     /**
      * Obtener datos completos para el reporte
@@ -180,6 +210,8 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                     row.put("direccion", rs.getString("direccion"));
                     row.put("zona", rs.getString("zona"));
                     row.put("telefonos", rs.getString("telefonos"));
+                    row.put("estado", rs.getInt("estado"));                    // ⭐ Nuevo
+                    row.put("estadoTexto", rs.getString("estado_texto"));      // ⭐ Nuevo
                     row.put("totalGeneral", rs.getFloat("total_general"));
                     row.put("totalSinFactura", rs.getFloat("total_sin_factura"));
                     row.put("totalArticulos", rs.getInt("total_articulos"));
@@ -233,6 +265,8 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                 .direccion((String) primerRegistro.get("direccion"))
                 .zona((String) primerRegistro.get("zona"))
                 .telefonos((String) primerRegistro.get("telefonos"))
+                .estado((Integer) primerRegistro.get("estado"))                // ⭐ Nuevo
+                .estadoTexto((String) primerRegistro.get("estadoTexto"))       // ⭐ Nuevo
                 .totalConFactura((Float) primerRegistro.get("totalGeneral"))
                 .totalSinFactura((Float) primerRegistro.get("totalSinFactura"))
                 .totalArticulos((Integer) primerRegistro.get("totalArticulos"))
@@ -244,20 +278,20 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
      * Mapear ResultSet a NotaEntregaResponse
      */
     private NotaEntregaResponse mapNotaEntregaResponse(ResultSet rs) throws SQLException {
-        NotaEntregaResponse response = NotaEntregaResponse.builder()
-                .codNotaEntrega(rs.getInt(1))        // cod_nota_entrega
-                .codCliente(rs.getInt(2))            // cod_cliente
-                .nombreCliente(rs.getString(3))      // nombre_cliente
-                .fecha(rs.getDate(4).toLocalDate())  // fecha
-                .direccion(rs.getString(5))          // direccion
-                .zona(rs.getString(6))               // zona
-                .audUsuario(rs.getInt(7))            // aud_usuario
-                .audFecha(rs.getTimestamp(8).toLocalDateTime())  // aud_fecha
-                .totalGeneral(rs.getFloat(9))       // total_general
-                .totalArticulos(rs.getInt(10))      // total_articulos
+        return NotaEntregaResponse.builder()
+                .codNotaEntrega(rs.getInt("cod_nota_entrega"))
+                .codCliente(rs.getInt("cod_cliente"))
+                .nombreCliente(rs.getString("nombre_cliente"))
+                .fecha(rs.getDate("fecha").toLocalDate())
+                .direccion(rs.getString("direccion"))
+                .zona(rs.getString("zona"))
+                .audUsuario(rs.getInt("aud_usuario"))
+                .audFecha(rs.getTimestamp("aud_fecha").toLocalDateTime())
+                .estado(rs.getInt("estado"))                    // ⭐ Nuevo
+                .estadoTexto(rs.getString("estado_texto"))      // ⭐ Nuevo
+                .totalGeneral(rs.getFloat("total_general"))
+                .totalArticulos(rs.getInt("total_articulos"))
                 .build();
-
-        return response;
     }
 
     /**
