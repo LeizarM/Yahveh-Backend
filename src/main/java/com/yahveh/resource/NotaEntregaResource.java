@@ -7,6 +7,7 @@ import com.yahveh.security.SecurityUtils;
 import com.yahveh.service.NotaEntregaService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -145,5 +146,30 @@ public class NotaEntregaResource {
         notaEntregaService.eliminar(codNotaEntrega);
 
         return Response.ok(ApiResponse.success("Nota de entrega eliminada exitosamente", null)).build();
+    }
+
+    /**
+     * ⭐ NUEVO: Generar reporte de ventas mensual en PDF
+     */
+    @GET
+    @Path("/reporte-ventas/pdf")
+    @Produces("application/pdf")
+    public Response generarReporteVentas(
+            @QueryParam("fechaDesde") @NotNull String fechaDesde,
+            @QueryParam("fechaHasta") @NotNull String fechaHasta) {
+
+        log.info("GET /api/notas-entrega/reporte-ventas/pdf?fechaDesde={}&fechaHasta={} - Usuario: {}",
+                fechaDesde, fechaHasta, securityUtils.getCurrentUsername());
+
+        LocalDate desde = LocalDate.parse(fechaDesde);
+        LocalDate hasta = LocalDate.parse(fechaHasta);
+
+        byte[] pdf = notaEntregaService.generarReporteVentas(desde, hasta);
+
+        String nombreArchivo = "reporte_ventas_" + fechaDesde + "_" + fechaHasta + ".pdf";
+
+        return Response.ok(pdf)
+                .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
+                .build();
     }
 }

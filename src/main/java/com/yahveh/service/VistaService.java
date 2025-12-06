@@ -20,10 +20,10 @@ public class VistaService {
     /**
      * Listar todas las vistas (plano)
      */
-    public List<VistaResponse> listarTodas() {
+    public List<VistaResponse> listarTodas( long codUsuario ) {
         log.info("Listando todas las vistas");
 
-        return vistaRepository.listarTodas().stream()
+        return vistaRepository.listarTodas( codUsuario ).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }

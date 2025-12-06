@@ -14,10 +14,10 @@ public class VistaRepository extends BaseRepository<Vista> {
     /**
      * Listar todas las vistas (menú)
      */
-    public List<Vista> listarTodas() {
+    public List<Vista> listarTodas( long codUsuario) {
         String sql = "SELECT codvista, codvistapadre, direccion, titulo, audusuario " +
-                "FROM p_list_vista(p_accion := ?)";
-        return executeQueryList(sql, this::mapVista, "L");
+                "FROM p_list_vista(p_codusuario := ?, p_accion := ?)";
+        return executeQueryList(sql, this::mapVista, codUsuario, "L");
     }
 
     private Vista mapVista(ResultSet rs) throws SQLException {

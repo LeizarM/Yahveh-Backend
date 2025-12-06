@@ -69,13 +69,13 @@ public class SecurityUtils {
      * Verificar si el usuario es ADMIN
      */
     public boolean isAdmin() {
-        return hasRole("ADMIN");
+        return hasRole("admin");
     }
 
     /**
      * Verificar si el usuario es USER
      */
     public boolean isUser() {
-        return hasRole("USER");
+        return hasRole("lim");
     }
 }

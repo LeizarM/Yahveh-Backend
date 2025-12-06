@@ -1,6 +1,7 @@
 package com.yahveh.repository;
 
 import com.yahveh.dto.NotaEntregaReporteDTO;
+import com.yahveh.dto.VentaReporteDTO;
 import com.yahveh.dto.response.NotaEntregaResponse;
 import com.yahveh.exception.BusinessException;
 import com.yahveh.exception.NotFoundException;
@@ -293,6 +294,71 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                 .totalArticulos(rs.getInt("total_articulos"))
                 .build();
     }
+
+    /**
+     * ⭐ NUEVO: Obtener datos para reporte de ventas usando el SP
+     */
+    public List<VentaReporteDTO> obtenerReporteVentas(LocalDate fechaDesde, LocalDate fechaHasta) {
+        String sql = """
+        SELECT * FROM p_list_nota_entrega(
+            p_accion := 'V'::VARCHAR,
+            p_codnotaentrega := NULL::BIGINT,
+            p_codcliente := NULL::BIGINT,
+            p_fecha_desde := ?::DATE,
+            p_fecha_hasta := ?::DATE,
+            p_estado := 1::INTEGER
+        )
+        """;
+
+        List<VentaReporteDTO> ventas = new ArrayList<>();
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, java.sql.Date.valueOf(fechaDesde));
+            stmt.setDate(2, java.sql.Date.valueOf(fechaHasta));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    // Determinar si es fila de detalle o total
+                    String estadoTexto = rs.getString("estado_texto");
+                    String tipoFila = "TOTAL".equals(estadoTexto) ? "TOTAL" : "DETALLE";
+
+                    VentaReporteDTO venta = VentaReporteDTO.builder()
+                            .fecha(rs.getDate("fecha") != null ? rs.getDate("fecha").toLocalDate() : null)
+                            .codCliente(rs.getObject("cod_cliente") != null ? rs.getLong("cod_cliente") : null)
+                            .nombreCliente(rs.getString("nombre_cliente"))
+                            .direccion(rs.getString("direccion"))
+                            .ciudad(rs.getString("zona"))
+                            .codArticulo(rs.getString("cod_articulo"))
+                            .cantidad(rs.getObject("cantidad") != null ? rs.getInt("cantidad") : null)
+                            .lineaArticulo(rs.getString("linea_articulo"))
+                            .productoCompleto(rs.getString("producto_completo"))
+                            .precioUnitario(rs.getObject("precio_unitario") != null ? rs.getFloat("precio_unitario") : null)
+                            .descuento(rs.getObject("descuento") != null ? rs.getFloat("descuento") : null)
+                            .totalBs(rs.getObject("total_bs") != null ? rs.getFloat("total_bs") : null)
+                            .descBs(rs.getObject("desc_bs") != null ? rs.getFloat("desc_bs") : null)
+                            .bsUnitario(rs.getObject("bs_unitario") != null ? rs.getFloat("bs_unitario") : null)
+                            .totalBsDesc(rs.getObject("total_bs_desc") != null ? rs.getFloat("total_bs_desc") : null)
+                            .totalGeneralBs(rs.getObject("total_general_bs") != null ? rs.getFloat("total_general_bs") : null)
+                            .tipoFila(tipoFila)
+                            .build();
+
+                    ventas.add(venta);
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error al obtener reporte de ventas", e);
+            throw new RuntimeException("Error al obtener reporte de ventas: " + e.getMessage(), e);
+        }
+
+        if (ventas.isEmpty()) {
+            log.warn("No se encontraron ventas para el rango de fechas: {} - {}", fechaDesde, fechaHasta);
+        }
+
+        return ventas;
+    }
+
 
     /**
      * Mapear ResultSet a AbmResult

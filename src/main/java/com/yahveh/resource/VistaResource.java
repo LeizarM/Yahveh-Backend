@@ -35,7 +35,7 @@ public class VistaResource {
     public Response listarVistas() {
         log.info("POST /api/vistas - Usuario: {}", securityUtils.getCurrentUsername());
 
-        List<VistaResponse> vistas = vistaService.listarTodas();
+        List<VistaResponse> vistas = vistaService.listarTodas( securityUtils.getCurrentUserId() );
         return Response.ok(ApiResponse.success(vistas)).build();
     }
 

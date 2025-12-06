@@ -1,9 +1,11 @@
 package com.yahveh.service;
 
 import com.yahveh.dto.NotaEntregaReporteDTO;
+import com.yahveh.dto.VentaReporteDTO;
 import com.yahveh.dto.request.DetalleNotaEntregaRequest;
 import com.yahveh.dto.request.NotaEntregaRequest;
 import com.yahveh.dto.response.NotaEntregaResponse;
+import com.yahveh.exception.BusinessException;
 import com.yahveh.repository.DetalleNotaEntregaRepository;
 import com.yahveh.repository.NotaEntregaRepository;
 import com.yahveh.security.SecurityUtils;
@@ -239,5 +241,39 @@ public class NotaEntregaService {
 
         // Generar PDF con ambas copias
         return reporteService.generarReportePDF("nota_entrega", parametros, detallesDuplicados);
+    }
+
+    /**
+     * ⭐ Generar reporte de ventas mensual
+     */
+    public byte[] generarReporteVentas(LocalDate fechaDesde, LocalDate fechaHasta) {
+        log.info("Generando reporte de ventas desde {} hasta {}", fechaDesde, fechaHasta);
+
+        try {
+            // 1. Obtener datos
+            List<VentaReporteDTO> ventas = notaEntregaRepository.obtenerReporteVentas(fechaDesde, fechaHasta);
+
+            if (ventas.isEmpty()) {
+                log.warn("No hay datos para el reporte de ventas");
+                throw new BusinessException("No hay datos disponibles para el período seleccionado");
+            }
+
+            // 2. Preparar parámetros (convertir LocalDate a java.util.Date)
+            Map<String, Object> parametros = new HashMap<>();
+            parametros.put("fechaDesde", java.sql.Date.valueOf(fechaDesde));
+            parametros.put("fechaHasta", java.sql.Date.valueOf(fechaHasta));
+            parametros.put("tituloReporte", "REPORTE DE VENTAS MENSUAL");
+
+            // 3. Generar PDF usando el ReporteService
+            byte[] pdfBytes = reporteService.generarReportePDF("reporte_ventas", parametros, ventas);
+
+            log.info("Reporte de ventas generado. Tamaño: {} bytes, Registros: {}", pdfBytes.length, ventas.size());
+
+            return pdfBytes;
+
+        } catch (Exception e) {
+            log.error("Error al generar reporte de ventas", e);
+            throw new RuntimeException("Error al generar reporte de ventas: " + e.getMessage(), e);
+        }
     }
 }
