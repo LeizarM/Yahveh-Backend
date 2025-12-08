@@ -1,5 +1,6 @@
 package com.yahveh.resource;
 
+import com.yahveh.dto.VentaReporteDTO;
 import com.yahveh.dto.request.NotaEntregaRequest;
 import com.yahveh.dto.response.ApiResponse;
 import com.yahveh.dto.response.NotaEntregaResponse;
@@ -14,7 +15,10 @@ import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Path("/api/notas-entrega")
 @Produces(MediaType.APPLICATION_JSON)
@@ -149,16 +153,17 @@ public class NotaEntregaResource {
     }
 
     /**
-     * ⭐ NUEVO: Generar reporte de ventas mensual en PDF
+     * ⭐ Generar reporte de ventas mensual en PDF
      */
     @GET
-    @Path("/reporte-ventas/pdf")
+    @Path("/reporte-ventas/pdf/{fechaDesde}/{fechaHasta}")
     @Produces("application/pdf")
+    @RolesAllowed({"admin", "lim"})
     public Response generarReporteVentas(
-            @QueryParam("fechaDesde") @NotNull String fechaDesde,
-            @QueryParam("fechaHasta") @NotNull String fechaHasta) {
+            @PathParam("fechaDesde") @NotNull String fechaDesde,
+            @PathParam("fechaHasta") @NotNull String fechaHasta) {
 
-        log.info("GET /api/notas-entrega/reporte-ventas/pdf?fechaDesde={}&fechaHasta={} - Usuario: {}",
+        log.info("GET /api/notas-entrega/reporte-ventas/pdf/{}/{} - Usuario: {}",
                 fechaDesde, fechaHasta, securityUtils.getCurrentUsername());
 
         LocalDate desde = LocalDate.parse(fechaDesde);
@@ -172,4 +177,56 @@ public class NotaEntregaResource {
                 .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
                 .build();
     }
+
+
+    /**
+     * ⭐ Obtener datos del reporte de ventas en formato JSON
+     */
+    @GET
+    @Path("/reporte-ventas/{fechaDesde}/{fechaHasta}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin", "lim"})
+    public Response obtenerReporteVentasJSON(
+            @PathParam("fechaDesde") @NotNull String fechaDesde,
+            @PathParam("fechaHasta") @NotNull String fechaHasta) {
+
+        log.info("GET /api/notas-entrega/reporte-ventas/{}/{} - Usuario: {}",
+                fechaDesde, fechaHasta, securityUtils.getCurrentUsername());
+
+        try {
+            LocalDate desde = LocalDate.parse(fechaDesde);
+            LocalDate hasta = LocalDate.parse(fechaHasta);
+
+            List<VentaReporteDTO> ventas = notaEntregaService.obtenerDatosReporteVentas(desde, hasta);
+
+            // Estructura de respuesta estándar
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Reporte de ventas obtenido exitosamente");
+            response.put("data", ventas);
+
+            return Response.ok(response).build();
+
+        } catch (DateTimeParseException e) {
+            log.error("Error al parsear fechas: {}", e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of(
+                            "success", false,
+                            "message", "Formato de fecha inválido. Use: YYYY-MM-DD",
+                            "data", null
+                    ))
+                    .build();
+        } catch (Exception e) {
+            log.error("Error al obtener reporte de ventas", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(Map.of(
+                            "success", false,
+                            "message", "Error al generar reporte: " + e.getMessage(),
+                            "data", null
+                    ))
+                    .build();
+        }
+    }
+
+
 }

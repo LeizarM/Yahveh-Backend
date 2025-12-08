@@ -184,6 +184,23 @@ public class NotaEntregaService {
         notaEntregaRepository.eliminarNotaEntrega(codNotaEntrega, audUsuario);
     }
 
+    /**
+     * ⭐ Obtener datos del reporte de ventas (sin generar PDF)
+     */
+    public List<VentaReporteDTO> obtenerDatosReporteVentas(LocalDate fechaDesde, LocalDate fechaHasta) {
+        log.info("Obteniendo datos del reporte de ventas desde {} hasta {}", fechaDesde, fechaHasta);
+
+        List<VentaReporteDTO> ventas = notaEntregaRepository.obtenerReporteVentas(fechaDesde, fechaHasta);
+
+        if (ventas.isEmpty()) {
+            log.warn("No hay datos para el reporte de ventas en el período especificado");
+        }
+
+        log.info("Se obtuvieron {} registros del reporte", ventas.size());
+
+        return ventas;
+    }
+
     public byte[] generarPDF(Long codNotaEntrega) {
         log.info("Generando PDF para nota de entrega: {}", codNotaEntrega);
 
