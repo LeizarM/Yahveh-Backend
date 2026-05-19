@@ -23,6 +23,7 @@ public class DetalleNotaEntregaResponse {
     private float precioUnitario;
     private float precioTotal;
     private float precioSinFactura;
+    private float descuento;
     private int audUsuario;
     private LocalDateTime audFecha;
 }

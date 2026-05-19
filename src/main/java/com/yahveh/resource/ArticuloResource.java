@@ -57,10 +57,10 @@ public class ArticuloResource {
 
 
     /**
-     * POST /api/articulos - Crear nuevo artículo
+     * POST /api/articulos - Crear nuevo artículo (solo admin)
      */
     @POST
-    @RolesAllowed({"lim", "admin"})
+    @RolesAllowed({"admin"})
     public Response crearArticulo(@Valid ArticuloRequest request) {
         int codUsuario = securityUtils.getCurrentUserId();
         log.info("POST /api/articulos - Usuario: {} - Creando: {}",
@@ -75,11 +75,11 @@ public class ArticuloResource {
     }
 
     /**
-     * PUT /api/articulos/{codArticulo} - Actualizar artículo
+     * PUT /api/articulos/{codArticulo} - Actualizar artículo (solo admin)
      */
     @PUT
     @Path("/{codArticulo}")
-    @RolesAllowed({"lim", "admin"})
+    @RolesAllowed({"admin"})
     public Response actualizarArticulo(@PathParam("codArticulo") String codArticulo, @Valid ArticuloRequest request) {
         int codUsuario = securityUtils.getCurrentUserId();
         log.info("PUT /api/articulos/{} - Usuario: {}", codArticulo, securityUtils.getCurrentUsername());

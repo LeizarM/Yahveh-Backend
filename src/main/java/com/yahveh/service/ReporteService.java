@@ -61,6 +61,24 @@ public class ReporteService {
         }
     }
 
+    public byte[] mergePDFs(byte[] pdf1, byte[] pdf2) {
+        try (PDDocument doc1 = Loader.loadPDF(pdf1);
+             PDDocument doc2 = Loader.loadPDF(pdf2)) {
+
+            PDFMergerUtility pdfMerger = new PDFMergerUtility();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+            pdfMerger.appendDocument(doc1, doc2);
+            doc1.save(outputStream);
+
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            log.error("Error al unir PDFs: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al unir PDFs: " + e.getMessage(), e);
+        }
+    }
+
     /**
      * Unir dos PDFs en la misma página (uno arriba, otro abajo)
      */

@@ -1,6 +1,8 @@
 package com.yahveh.repository;
 
+import com.yahveh.dto.InventarioReporteDTO;
 import com.yahveh.dto.NotaEntregaReporteDTO;
+import com.yahveh.dto.VendedorReporteDTO;
 import com.yahveh.dto.VentaReporteDTO;
 import com.yahveh.dto.response.NotaEntregaResponse;
 import com.yahveh.exception.BusinessException;
@@ -81,6 +83,35 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
         String sql = "SELECT * FROM p_list_nota_entrega(p_fecha_desde := ?, p_fecha_hasta := ?, p_estado := 1)";
         return executeQueryList(sql, this::mapNotaEntregaResponse, fechaDesde, fechaHasta);
     }
+
+    // ── Listados filtrados por vendedor (usuario no-admin) ──────────────────
+
+    public List<NotaEntregaResponse> listarPorUsuario(int userId) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_estado := 1) WHERE aud_usuario = ?";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, userId);
+    }
+
+    public List<NotaEntregaResponse> listarTodasConAnuladasPorUsuario(int userId) {
+        String sql = "SELECT * FROM p_list_nota_entrega() WHERE aud_usuario = ?";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, userId);
+    }
+
+    public List<NotaEntregaResponse> listarAnuladasPorUsuario(int userId) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_estado := 0) WHERE aud_usuario = ?";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, userId);
+    }
+
+    public List<NotaEntregaResponse> listarPorFechasPorUsuario(LocalDate fechaDesde, LocalDate fechaHasta, int userId) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_fecha_desde := ?, p_fecha_hasta := ?, p_estado := 1) WHERE aud_usuario = ?";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, fechaDesde, fechaHasta, userId);
+    }
+
+    public List<NotaEntregaResponse> listarPorClientePorUsuario(long codCliente, int userId) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_codcliente := ?, p_estado := 1) WHERE aud_usuario = ?";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, codCliente, userId);
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
 
     /**
      * Crear nueva nota de entrega
@@ -223,6 +254,7 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                     row.put("descripcionArticulo", rs.getString("descripcion_articulo"));
                     row.put("cantidad", rs.getInt("cantidad"));
                     row.put("precioUnitario", rs.getFloat("precio_unitario"));
+                    row.put("descuento", rs.getFloat("descuento"));
                     row.put("precioTotal", rs.getFloat("precio_total"));
                     row.put("precioSinFactura", rs.getFloat("precio_sin_factura"));
                     row.put("subtotalSinFactura", rs.getFloat("subtotal_sin_factura"));
@@ -250,6 +282,7 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                         .descripcionArticulo((String) row.get("descripcionArticulo"))
                         .cantidad((Integer) row.get("cantidad"))
                         .precioUnitario((Float) row.get("precioUnitario"))
+                        .descuento((Float) row.get("descuento"))
                         .precioTotal((Float) row.get("precioTotal"))
                         .precioSinFactura((Float) row.get("precioSinFactura"))
                         .subtotalSinFactura((Float) row.get("subtotalSinFactura"))
@@ -287,9 +320,10 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                 .direccion(rs.getString("direccion"))
                 .zona(rs.getString("zona"))
                 .audUsuario(rs.getInt("aud_usuario"))
+                .nombreEmpleado(rs.getString("nombre_empleado"))
                 .audFecha(rs.getTimestamp("aud_fecha").toLocalDateTime())
-                .estado(rs.getInt("estado"))                    // ⭐ Nuevo
-                .estadoTexto(rs.getString("estado_texto"))      // ⭐ Nuevo
+                .estado(rs.getInt("estado"))
+                .estadoTexto(rs.getString("estado_texto"))
                 .totalGeneral(rs.getFloat("total_general"))
                 .totalArticulos(rs.getInt("total_articulos"))
                 .build();
@@ -359,6 +393,73 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
         return ventas;
     }
 
+
+    public List<VendedorReporteDTO> obtenerReporteVendedores(LocalDate fechaDesde, LocalDate fechaHasta) {
+        String sql = "SELECT * FROM p_reporte_notas_vendedor(?, ?)";
+
+        List<VendedorReporteDTO> result = new ArrayList<>();
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, java.sql.Date.valueOf(fechaDesde));
+            stmt.setDate(2, java.sql.Date.valueOf(fechaHasta));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    result.add(VendedorReporteDTO.builder()
+                            .nombreVendedor(rs.getString("nombre_vendedor"))
+                            .fecha(rs.getDate("fecha") != null ? rs.getDate("fecha").toLocalDate() : null)
+                            .codNotaEntrega(rs.getLong("cod_nota_entrega"))
+                            .nombreCliente(rs.getString("nombre_cliente"))
+                            .direccion(rs.getString("direccion"))
+                            .zona(rs.getString("zona"))
+                            .cantidadArticulos(rs.getInt("cantidad_articulos"))
+                            .totalBs(rs.getFloat("total_bs"))
+                            .build());
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error al obtener reporte de vendedores", e);
+            throw new RuntimeException("Error al obtener reporte de vendedores: " + e.getMessage(), e);
+        }
+
+        return result;
+    }
+
+    public List<InventarioReporteDTO> obtenerReporteInventario(LocalDate fechaDesde, LocalDate fechaHasta) {
+        String sql = "SELECT * FROM p_reporte_inventario(?, ?)";
+
+        List<InventarioReporteDTO> result = new ArrayList<>();
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, java.sql.Date.valueOf(fechaDesde));
+            stmt.setDate(2, java.sql.Date.valueOf(fechaHasta));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    result.add(InventarioReporteDTO.builder()
+                            .codArticulo(rs.getString("cod_articulo"))
+                            .descripcion(rs.getString("descripcion"))
+                            .codLinea(rs.getString("cod_linea"))
+                            .descripcionLinea(rs.getString("descripcion_linea"))
+                            .codFamilia(rs.getString("cod_familia"))
+                            .descripcionFamilia(rs.getString("descripcion_familia"))
+                            .entradas(rs.getInt("entradas"))
+                            .salidas(rs.getInt("salidas"))
+                            .stockActual(rs.getInt("stock_actual"))
+                            .build());
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error al obtener reporte de inventario", e);
+            throw new RuntimeException("Error al obtener reporte de inventario: " + e.getMessage(), e);
+        }
+
+        return result;
+    }
 
     /**
      * Mapear ResultSet a AbmResult

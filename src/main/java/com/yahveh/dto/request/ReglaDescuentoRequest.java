@@ -7,10 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DetalleNotaEntregaRequest {
+public class ReglaDescuentoRequest {
     private String codArticulo;
-    private int cantidad;
-    private float precioUnitario;
-    private float precioSinFactura;
+    private int cantidadMinima;
     private float descuento;
 }

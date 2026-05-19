@@ -74,7 +74,8 @@ public class InventarioRepository extends BaseRepository<Inventario> {
      * Crear nuevo movimiento de inventario
      */
     public long crearMovimiento(String codArticulo, String tipoMovimiento, int cantidad,
-                                float precioUnitario, LocalDate fecha, String observacion, int audUsuario) {
+                                float precioUnitario, LocalDate fecha, String observacion,
+                                String codImportacion, int audUsuario) {
         String sql = "SELECT p_error, p_errormsg, p_result " +
                 "FROM p_abm_inventario(" +
                 "p_codarticulo := ?, " +
@@ -83,6 +84,7 @@ public class InventarioRepository extends BaseRepository<Inventario> {
                 "p_preciounitario := ?, " +
                 "p_fecha := ?, " +
                 "p_observacion := ?, " +
+                "p_codimportacion := ?, " +
                 "p_audusuario := ?, " +
                 "p_accion := 'I')";
 
@@ -95,6 +97,7 @@ public class InventarioRepository extends BaseRepository<Inventario> {
                 precioUnitario,
                 fecha,
                 observacion,
+                codImportacion,
                 audUsuario
         ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
 
@@ -178,16 +181,20 @@ public class InventarioRepository extends BaseRepository<Inventario> {
         }
 
         response.setObservacion(rs.getString("observacion"));
+        response.setCodImportacion(safeGetString(rs, "cod_importacion"));
         response.setAudUsuario(rs.getInt("aud_usuario"));
-
-
 
         return response;
     }
 
-    /**
-     * Mapear ResultSet a AbmResult
-     */
+    private String safeGetString(ResultSet rs, String column) {
+        try {
+            return rs.getString(column);
+        } catch (SQLException e) {
+            return null;
+        }
+    }
+
     private AbmResult mapAbmResult(ResultSet rs) throws SQLException {
         AbmResult result = new AbmResult();
         result.error = rs.getInt("p_error");

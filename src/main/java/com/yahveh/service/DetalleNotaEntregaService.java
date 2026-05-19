@@ -43,6 +43,7 @@ public class DetalleNotaEntregaService {
                 request.getCantidad(),
                 request.getPrecioUnitario(),
                 request.getPrecioSinFactura(),
+                request.getDescuento(),
                 audUsuario
         );
 
@@ -59,6 +60,7 @@ public class DetalleNotaEntregaService {
                 request.getCantidad(),
                 request.getPrecioUnitario(),
                 request.getPrecioSinFactura(),
+                request.getDescuento(),
                 audUsuario
         );
 

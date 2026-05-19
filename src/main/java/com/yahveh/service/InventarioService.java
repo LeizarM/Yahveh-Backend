@@ -61,6 +61,7 @@ public class InventarioService {
                 request.getPrecioUnitario(),
                 request.getFecha(),
                 request.getObservacion(),
+                request.getCodImportacion(),
                 audUsuario
         );
 

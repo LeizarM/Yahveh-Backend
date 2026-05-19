@@ -17,5 +17,6 @@ public class ArticuloResponse {
     private String descripcion2;
     private int stockActual;
     private double precioActual;
+    private double precioSinFactura;
     private int audUsuario;
 }

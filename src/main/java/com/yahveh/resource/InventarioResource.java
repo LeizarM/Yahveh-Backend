@@ -84,6 +84,7 @@ public class InventarioResource {
     }
 
     @POST
+    @RolesAllowed({"admin"})
     public Response crear(InventarioRequest request) {
         log.info("POST /api/inventario - Usuario: {} - Artículo: {}",
                 securityUtils.getCurrentUsername(), request.getCodArticulo());
@@ -97,6 +98,7 @@ public class InventarioResource {
 
     @PUT
     @Path("/{codInventario}")
+    @RolesAllowed({"admin"})
     public Response modificar(@PathParam("codInventario") int codInventario, InventarioRequest request) {
         log.info("PUT /api/inventario/{} - Usuario: {}", codInventario, securityUtils.getCurrentUsername());
 
@@ -107,6 +109,7 @@ public class InventarioResource {
 
     @DELETE
     @Path("/{codInventario}")
+    @RolesAllowed({"admin"})
     public Response eliminar(@PathParam("codInventario") int codInventario) {
         log.info("DELETE /api/inventario/{} - Usuario: {}", codInventario, securityUtils.getCurrentUsername());
 

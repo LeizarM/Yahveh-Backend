@@ -23,6 +23,7 @@ public class NotaEntregaResponse {
     private int estado;
     private String estadoTexto;
     private int audUsuario;
+    private String nombreEmpleado;
     private LocalDateTime audFecha;
     private List<DetalleNotaEntregaResponse> detalles;
     private float totalGeneral;

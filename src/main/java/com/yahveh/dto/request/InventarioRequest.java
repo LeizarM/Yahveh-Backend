@@ -16,4 +16,5 @@ public class InventarioRequest {
     private float precioUnitario;
     private LocalDate fecha;
     private String observacion;
+    private String codImportacion;
 }

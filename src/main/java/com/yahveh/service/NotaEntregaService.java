@@ -1,6 +1,8 @@
 package com.yahveh.service;
 
+import com.yahveh.dto.InventarioReporteDTO;
 import com.yahveh.dto.NotaEntregaReporteDTO;
+import com.yahveh.dto.VendedorReporteDTO;
 import com.yahveh.dto.VentaReporteDTO;
 import com.yahveh.dto.request.DetalleNotaEntregaRequest;
 import com.yahveh.dto.request.NotaEntregaRequest;
@@ -35,45 +37,44 @@ public class NotaEntregaService {
     ReporteService reporteService;
 
     /**
-     * Listar solo notas válidas
+     * Listar notas válidas — admin ve todas, vendedor solo las suyas
      */
     public List<NotaEntregaResponse> listar() {
-        log.info("Listando todas las notas de entrega válidas");
-        List<NotaEntregaResponse> notas = notaEntregaRepository.listarTodas();
+        log.info("Listando notas de entrega válidas");
+        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
+                ? notaEntregaRepository.listarTodas()
+                : notaEntregaRepository.listarPorUsuario(securityUtils.getCurrentUserId());
 
-        // Cargar detalles para cada nota
-        notas.forEach(nota -> {
-            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
-        });
-
+        notas.forEach(nota ->
+                nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
         return notas;
     }
 
     /**
-     * Listar todas las notas (válidas y anuladas)
+     * Listar todas las notas (válidas + anuladas) — admin ve todas, vendedor solo las suyas
      */
     public List<NotaEntregaResponse> listarTodasConAnuladas() {
         log.info("Listando todas las notas de entrega (válidas y anuladas)");
-        List<NotaEntregaResponse> notas = notaEntregaRepository.listarTodasConAnuladas();
+        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
+                ? notaEntregaRepository.listarTodasConAnuladas()
+                : notaEntregaRepository.listarTodasConAnuladasPorUsuario(securityUtils.getCurrentUserId());
 
-        notas.forEach(nota -> {
-            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
-        });
-
+        notas.forEach(nota ->
+                nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
         return notas;
     }
 
     /**
-     * Listar solo notas anuladas
+     * Listar solo notas anuladas — admin ve todas, vendedor solo las suyas
      */
     public List<NotaEntregaResponse> listarAnuladas() {
         log.info("Listando notas de entrega anuladas");
-        List<NotaEntregaResponse> notas = notaEntregaRepository.listarAnuladas();
+        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
+                ? notaEntregaRepository.listarAnuladas()
+                : notaEntregaRepository.listarAnuladasPorUsuario(securityUtils.getCurrentUserId());
 
-        notas.forEach(nota -> {
-            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
-        });
-
+        notas.forEach(nota ->
+                nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
         return notas;
     }
 
@@ -82,31 +83,35 @@ public class NotaEntregaService {
         NotaEntregaResponse nota = notaEntregaRepository.buscarPorCodigo(codNotaEntrega)
                 .orElseThrow(() -> new NotFoundException("Nota de entrega no encontrada"));
 
-        // Cargar detalles
         nota.setDetalles(detalleRepository.listarPorNotaEntrega(codNotaEntrega));
-
         return nota;
     }
 
+    /**
+     * Listar por cliente — admin ve todas las del cliente, vendedor solo las suyas de ese cliente
+     */
     public List<NotaEntregaResponse> listarPorCliente(int codCliente) {
         log.info("Listando notas de entrega del cliente: {}", codCliente);
-        List<NotaEntregaResponse> notas = notaEntregaRepository.listarPorCliente(codCliente);
+        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
+                ? notaEntregaRepository.listarPorCliente(codCliente)
+                : notaEntregaRepository.listarPorClientePorUsuario(codCliente, securityUtils.getCurrentUserId());
 
-        notas.forEach(nota -> {
-            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
-        });
-
+        notas.forEach(nota ->
+                nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
         return notas;
     }
 
+    /**
+     * Listar por fechas — admin ve todas, vendedor solo las suyas
+     */
     public List<NotaEntregaResponse> listarPorFechas(LocalDate fechaDesde, LocalDate fechaHasta) {
         log.info("Listando notas de entrega entre {} y {}", fechaDesde, fechaHasta);
-        List<NotaEntregaResponse> notas = notaEntregaRepository.listarPorFechas(fechaDesde, fechaHasta);
+        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
+                ? notaEntregaRepository.listarPorFechas(fechaDesde, fechaHasta)
+                : notaEntregaRepository.listarPorFechasPorUsuario(fechaDesde, fechaHasta, securityUtils.getCurrentUserId());
 
-        notas.forEach(nota -> {
-            nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega()));
-        });
-
+        notas.forEach(nota ->
+                nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
         return notas;
     }
 
@@ -135,6 +140,7 @@ public class NotaEntregaService {
                         detalle.getCantidad(),
                         detalle.getPrecioUnitario(),
                         detalle.getPrecioSinFactura(),
+                        detalle.getDescuento(),
                         (int) audUsuario
                 );
             }
@@ -218,6 +224,7 @@ public class NotaEntregaService {
             item.put("descripcionArticulo", detalle.getDescripcionArticulo());
             item.put("cantidad", detalle.getCantidad());
             item.put("precioUnitario", detalle.getPrecioUnitario());
+            item.put("descuento", detalle.getDescuento());
             item.put("precioTotal", detalle.getPrecioTotal());
             item.put("precioSinFactura", detalle.getPrecioSinFactura());
             item.put("subtotalSinFactura", detalle.getSubtotalSinFactura());
@@ -233,6 +240,7 @@ public class NotaEntregaService {
             item.put("descripcionArticulo", detalle.getDescripcionArticulo());
             item.put("cantidad", detalle.getCantidad());
             item.put("precioUnitario", detalle.getPrecioUnitario());
+            item.put("descuento", detalle.getDescuento());
             item.put("precioTotal", detalle.getPrecioTotal());
             item.put("precioSinFactura", detalle.getPrecioSinFactura());
             item.put("subtotalSinFactura", detalle.getSubtotalSinFactura());
@@ -258,6 +266,41 @@ public class NotaEntregaService {
 
         // Generar PDF con ambas copias
         return reporteService.generarReportePDF("nota_entrega", parametros, detallesDuplicados);
+    }
+
+    public byte[] generarReporteVendedores(LocalDate fechaDesde, LocalDate fechaHasta) {
+        log.info("Generando reporte de vendedores desde {} hasta {}", fechaDesde, fechaHasta);
+
+        List<VendedorReporteDTO> datos = notaEntregaRepository.obtenerReporteVendedores(fechaDesde, fechaHasta);
+
+        if (datos.isEmpty()) {
+            throw new BusinessException("No hay datos disponibles para el período seleccionado");
+        }
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("fechaDesde", java.sql.Date.valueOf(fechaDesde));
+        params.put("fechaHasta", java.sql.Date.valueOf(fechaHasta));
+
+        byte[] resumen = reporteService.generarReportePDF("reporte_vendedores_resumen", params, datos);
+        byte[] detalle = reporteService.generarReportePDF("reporte_vendedores_detalle", params, datos);
+
+        return reporteService.mergePDFs(resumen, detalle);
+    }
+
+    public byte[] generarReporteInventario(LocalDate fechaDesde, LocalDate fechaHasta) {
+        log.info("Generando reporte de inventario desde {} hasta {}", fechaDesde, fechaHasta);
+
+        List<InventarioReporteDTO> datos = notaEntregaRepository.obtenerReporteInventario(fechaDesde, fechaHasta);
+
+        if (datos.isEmpty()) {
+            throw new BusinessException("No hay artículos disponibles para el período seleccionado");
+        }
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("fechaDesde", java.sql.Date.valueOf(fechaDesde));
+        params.put("fechaHasta", java.sql.Date.valueOf(fechaHasta));
+
+        return reporteService.generarReportePDF("reporte_inventario", params, datos);
     }
 
     /**

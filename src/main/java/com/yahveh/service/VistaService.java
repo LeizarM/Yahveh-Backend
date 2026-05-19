@@ -18,19 +18,43 @@ public class VistaService {
     VistaRepository vistaRepository;
 
     /**
-     * Listar todas las vistas (plano)
+     * Menú dinámico del usuario autenticado (solo vistas permitidas)
      */
-    public List<VistaResponse> listarTodas( long codUsuario ) {
-        log.info("Listando todas las vistas");
-
-        return vistaRepository.listarTodas( codUsuario ).stream()
+    public List<VistaResponse> listarTodas(long codUsuario) {
+        log.info("Listando vistas del usuario {}", codUsuario);
+        return vistaRepository.listarTodas(codUsuario).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Convertir Vista a VistaResponse
+     * Admin: listar TODAS las vistas del sistema (sin filtro)
      */
+    public List<VistaResponse> listarTodasAdmin() {
+        log.info("Listando todas las vistas del sistema (admin)");
+        return vistaRepository.listarTodasAdmin().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Admin: listar las vistas asignadas a un usuario específico
+     */
+    public List<VistaResponse> listarDeUsuario(long codUsuario) {
+        log.info("Listando vistas del usuario {} (admin)", codUsuario);
+        return vistaRepository.listarDeUsuario(codUsuario).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Admin: reemplazar todas las vistas de un usuario
+     */
+    public void actualizarVistasDeUsuario(long codUsuario, List<Long> codVistas) {
+        log.info("Actualizando permisos del usuario {}: {} vistas", codUsuario, codVistas.size());
+        vistaRepository.actualizarVistasDeUsuario(codUsuario, codVistas);
+    }
+
     private VistaResponse toResponse(Vista vista) {
         return VistaResponse.builder()
                 .codVista(vista.getCodVista())
@@ -39,6 +63,4 @@ public class VistaService {
                 .titulo(vista.getTitulo())
                 .build();
     }
-
-
 }

@@ -24,6 +24,7 @@ public class InventarioResponse {
     private float valorTotal;
     private LocalDate fecha;
     private String observacion;
+    private String codImportacion;
     private int audUsuario;
 
 }

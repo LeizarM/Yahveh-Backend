@@ -45,9 +45,10 @@ public class NotaEntregaReporteDTO {
         private String descripcionArticulo;
         private int cantidad;
         private float precioUnitario;
+        private float descuento;
         private float precioTotal;
         private float precioSinFactura;
         private float subtotalSinFactura;
-        private String tipoCopia; // NUEVO CAMPO
+        private String tipoCopia;
     }
 }

@@ -48,7 +48,7 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
      * Crear nuevo detalle
      */
     public int crearDetalle(int codNotaEntrega, String codArticulo, int cantidad,
-                             float precioUnitario, float precioSinFactura, int audUsuario) {
+                             float precioUnitario, float precioSinFactura, float descuento, int audUsuario) {
         String sql = "SELECT p_error, p_errormsg, p_result " +
                 "FROM p_abm_detalle_nota_entrega(" +
                 "p_codnotaentrega := ?, " +
@@ -57,7 +57,8 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
                 "p_preciounitario := ?, " +
                 "p_preciosinfactura := ?, " +
                 "p_audusuario := ?, " +
-                "p_accion := 'I')";
+                "p_accion := 'I', " +
+                "p_descuento := ?)";
 
         AbmResult result = executeQuerySingle(
                 sql,
@@ -67,7 +68,8 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
                 cantidad,
                 precioUnitario,
                 precioSinFactura,
-                audUsuario
+                audUsuario,
+                descuento
         ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
 
         if (!result.isSuccess()) {
@@ -82,7 +84,7 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
      * Actualizar detalle
      */
     public void actualizarDetalle(int codDetalle, int cantidad, float precioUnitario,
-                                  float precioSinFactura, int audUsuario) {
+                                  float precioSinFactura, float descuento, int audUsuario) {
         String sql = "SELECT p_error, p_errormsg, p_result " +
                 "FROM p_abm_detalle_nota_entrega(" +
                 "p_coddetalle := ?, " +
@@ -90,7 +92,8 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
                 "p_preciounitario := ?, " +
                 "p_preciosinfactura := ?, " +
                 "p_audusuario := ?, " +
-                "p_accion := 'U')";
+                "p_accion := 'U', " +
+                "p_descuento := ?)";
 
         AbmResult result = executeQuerySingle(
                 sql,
@@ -99,7 +102,8 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
                 cantidad,
                 precioUnitario,
                 precioSinFactura,
-                audUsuario
+                audUsuario,
+                descuento
         ).orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
 
         if (!result.isSuccess()) {
@@ -131,11 +135,8 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
         }
     }
 
-    /**
-     * Mapear ResultSet a DetalleNotaEntregaResponse
-     */
     private DetalleNotaEntregaResponse mapDetalleResponse(ResultSet rs) throws SQLException {
-        DetalleNotaEntregaResponse response = DetalleNotaEntregaResponse.builder()
+        return DetalleNotaEntregaResponse.builder()
                 .codDetalle(rs.getInt(1))
                 .codNotaEntrega(rs.getInt(2))
                 .codArticulo(rs.getString(3))
@@ -148,11 +149,17 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
                 .precioTotal(rs.getFloat(10))
                 .precioSinFactura(rs.getFloat(11))
                 .audUsuario(rs.getInt(12))
+                .descuento(safeGetFloat(rs, "descuento"))
                 .build();
+    }
 
-
-
-        return response;
+    private float safeGetFloat(ResultSet rs, String column) {
+        try {
+            float val = rs.getFloat(column);
+            return rs.wasNull() ? 0f : val;
+        } catch (SQLException e) {
+            return 0f;
+        }
     }
 
     /**

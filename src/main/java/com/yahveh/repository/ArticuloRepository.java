@@ -173,8 +173,18 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
                 .descripcion2(rs.getString(5))
                 .stockActual(rs.getInt(6))
                 .precioActual(rs.getDouble(7))
+                .precioSinFactura(safeGetDouble(rs, "precio_sin_factura"))
                 .audUsuario(rs.getInt(8))
                 .build();
+    }
+
+    private double safeGetDouble(ResultSet rs, String column) {
+        try {
+            double val = rs.getDouble(column);
+            return rs.wasNull() ? 0.0 : val;
+        } catch (SQLException e) {
+            return 0.0;
+        }
     }
 
     /**
