@@ -26,6 +26,8 @@ public class NotaEntregaReporteDTO {
     private String telefonos;
     private int estado;
     private String estadoTexto;
+    private Long codEmpleado;
+    private String nombreEmpleado;
 
     // Totales
     private float totalConFactura;
@@ -46,6 +48,7 @@ public class NotaEntregaReporteDTO {
         private int cantidad;
         private float precioUnitario;
         private float descuento;
+        private float precioConDescuento;
         private float precioTotal;
         private float precioSinFactura;
         private float subtotalSinFactura;

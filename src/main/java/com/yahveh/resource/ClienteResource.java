@@ -125,7 +125,7 @@ public class ClienteResource {
      */
     @PUT
     @Path("/{codCliente}")
-    @RolesAllowed("admin")
+    @RolesAllowed({"admin", "lim"})
     public Response actualizarCliente(
             @PathParam("codCliente") int codCliente,
             @Valid ClienteRequest request) {

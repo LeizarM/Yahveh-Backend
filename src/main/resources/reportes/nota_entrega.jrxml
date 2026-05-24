@@ -14,6 +14,7 @@
 	<parameter name="totalSinFactura" class="java.lang.Float"/>
 	<parameter name="estado" class="java.lang.Integer"/>
 	<parameter name="estadoTexto" class="java.lang.String"/>
+	<parameter name="nombreEmpleado" class="java.lang.String"/>
 	<field name="codArticulo" class="java.lang.String"/>
 	<field name="lineaArticulo" class="java.lang.String"/>
 	<field name="descripcionArticulo" class="java.lang.String"/>
@@ -23,9 +24,10 @@
 	<field name="precioSinFactura" class="java.lang.Float"/>
 	<field name="subtotalSinFactura" class="java.lang.Float"/>
 	<field name="descuento" class="java.lang.Float"/>
+	<field name="precioConDescuento" class="java.lang.Float"/>
 	<field name="tipoCopia" class="java.lang.String"/>
 	<variable name="totalSinFacturaCalculado" class="java.lang.Float" resetType="Group" resetGroup="tipoCopiaGroup" calculation="Sum">
-		<variableExpression><![CDATA[($F{subtotalSinFactura} != null && $F{subtotalSinFactura} > 0f) ? $F{subtotalSinFactura} : ((float)$F{cantidad} * $F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))]]></variableExpression>
+		<variableExpression><![CDATA[($F{subtotalSinFactura} != null && $F{subtotalSinFactura} > 0f) ? $F{subtotalSinFactura} : ((float)$F{cantidad} * (($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))))]]></variableExpression>
 		<initialValueExpression><![CDATA[0.0f]]></initialValueExpression>
 	</variable>
 	<group name="tipoCopiaGroup">
@@ -144,11 +146,25 @@
 					<text><![CDATA[Dir:]]></text>
 				</staticText>
 				<textField>
-					<reportElement x="25" y="46" width="230" height="8" uuid="0877edaf-a333-44c2-91ce-07f0d4641156"/>
+					<reportElement x="25" y="46" width="180" height="8" uuid="0877edaf-a333-44c2-91ce-07f0d4641156"/>
 					<textElement>
 						<font size="5"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{direccion}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="210" y="46" width="25" height="8" uuid="11b22c33-d4e5-46f7-a890-987654321abc"/>
+					<textElement>
+						<font size="5" isBold="true"/>
+					</textElement>
+					<text><![CDATA[NIT:]]></text>
+				</staticText>
+				<textField isBlankWhenNull="true">
+					<reportElement x="235" y="46" width="120" height="8" uuid="22c33d44-e5f6-4708-b901-198765432bcd"/>
+					<textElement>
+						<font size="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$P{nit}]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement x="420" y="46" width="30" height="8" uuid="cbbba5b7-d7e5-4b8e-80af-b14f77e3b9cd"/>
@@ -158,11 +174,25 @@
 					<text><![CDATA[Zona:]]></text>
 				</staticText>
 				<textField>
-					<reportElement x="450" y="46" width="312" height="8" uuid="e894fbad-ebab-4ab5-badf-6090d08b29b5"/>
+					<reportElement x="450" y="46" width="170" height="8" uuid="e894fbad-ebab-4ab5-badf-6090d08b29b5"/>
 					<textElement>
 						<font size="5"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{zona}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="625" y="46" width="40" height="8" uuid="33d44e55-f6a7-4809-ca12-2a9876543cde"/>
+					<textElement>
+						<font size="5" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Vendedor:]]></text>
+				</staticText>
+				<textField isBlankWhenNull="true">
+					<reportElement x="665" y="46" width="97" height="8" uuid="44e55f66-a7b8-490a-db23-3b9876544def"/>
+					<textElement>
+						<font size="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$P{nombreEmpleado}]]></textFieldExpression>
 				</textField>
 				<line>
 					<reportElement x="0" y="56" width="762" height="1" uuid="b4b6be26-f936-4f72-8b04-cf9becba8214"/>
@@ -390,7 +420,7 @@
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="4"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f)]]></textFieldExpression>
+				<textFieldExpression><![CDATA[($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))]]></textFieldExpression>
 			</textField>
 			<textField pattern="#,##0.0'%'" isBlankWhenNull="true">
 				<reportElement x="375" y="0" width="40" height="10" uuid="f1e2d3c4-b5a6-7890-abcd-ef1234567892"/>
@@ -420,7 +450,7 @@
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="4"/>
 				</textElement>
-				<textFieldExpression><![CDATA[($F{precioSinFactura} != null && $F{precioSinFactura} > 0f) ? $F{precioSinFactura} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))]]></textFieldExpression>
+				<textFieldExpression><![CDATA[($F{precioSinFactura} != null && $F{precioSinFactura} > 0f) ? $F{precioSinFactura} : (($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f)))]]></textFieldExpression>
 			</textField>
 			<textField pattern="#,##0.00">
 				<reportElement x="525" y="0" width="55" height="10" uuid="220e200b-0ec0-46bc-a9aa-18f22a00f73a"/>
@@ -430,7 +460,7 @@
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="4"/>
 				</textElement>
-				<textFieldExpression><![CDATA[($F{subtotalSinFactura} != null && $F{subtotalSinFactura} > 0f) ? $F{subtotalSinFactura} : ((float)$F{cantidad} * $F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))]]></textFieldExpression>
+				<textFieldExpression><![CDATA[($F{subtotalSinFactura} != null && $F{subtotalSinFactura} > 0f) ? $F{subtotalSinFactura} : ((float)$F{cantidad} * (($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))))]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="580" y="0" width="182" height="10" uuid="3b2f5e64-80e7-4a5f-ad09-878ec16a6fe0"/>

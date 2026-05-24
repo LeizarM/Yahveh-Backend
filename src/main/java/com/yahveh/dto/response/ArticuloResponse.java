@@ -19,4 +19,6 @@ public class ArticuloResponse {
     private double precioActual;
     private double precioSinFactura;
     private int audUsuario;
+    /** Numero de fila global (1..N) calculado por el SP. Útil para enumerar incluso paginando. */
+    private long rowNumber;
 }

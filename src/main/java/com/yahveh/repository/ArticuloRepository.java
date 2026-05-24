@@ -1,13 +1,18 @@
 package com.yahveh.repository;
 
 import com.yahveh.dto.response.ArticuloResponse;
+import com.yahveh.dto.response.PagedResponse;
 import com.yahveh.exception.BusinessException;
 import com.yahveh.model.Articulo;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,12 +34,99 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
     }
 
     /**
-     * Listar todos los artículos con información completa
+     * Listar todos los artículos con información completa (sin paginación, backwards compat).
      */
     public List<ArticuloResponse> listarTodosCompleto() {
         String sql = "SELECT * " +
                 "FROM p_list_articulo(p_accion := ?)";
         return executeQueryList(sql, this::mapArticuloResponse, "L");
+    }
+
+    /**
+     * ⭐ Listar artículos paginados desde la BD (server-side pagination).
+     *
+     * El SP retorna en cada fila el total_records (mismo valor en todas las filas)
+     * para que con una sola consulta tengamos data + total, evitando un COUNT(*) extra.
+     *
+     * Si la página queda vacía (filtro sin matches), hacemos un fallback rápido
+     * para obtener el total real.
+     */
+    public PagedResponse<ArticuloResponse> listarPaginado(String search, int page, int pageSize) {
+        // Normalización de parámetros
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 500) pageSize = 500;
+
+        int offset = (page - 1) * pageSize;
+
+        String sql = "SELECT * FROM p_list_articulo(" +
+                "p_codarticulo := NULL, " +
+                "p_codlinea := NULL, " +
+                "p_descripcion := NULL, " +
+                "p_audusuario := NULL, " +
+                "p_accion := 'L', " +
+                "p_offset := ?, " +
+                "p_limit := ?, " +
+                "p_search := ?" +
+                ")";
+
+        List<ArticuloResponse> data = new ArrayList<>();
+        long total = 0;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, offset);
+            stmt.setInt(2, pageSize);
+            if (search == null || search.isBlank()) {
+                stmt.setNull(3, Types.VARCHAR);
+            } else {
+                stmt.setString(3, search.trim());
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ArticuloResponse a = mapArticuloResponse(rs);
+                    long t = rs.getLong("total_records");
+                    if (!rs.wasNull()) total = t;
+                    data.add(a);
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error al listar artículos paginados", e);
+            throw new RuntimeException("Error al listar artículos paginados: " + e.getMessage(), e);
+        }
+
+        // Si la página actual está vacía pero existen registros previos,
+        // pedimos el total con un offset 0 / limit 1 para no perder el contador.
+        if (data.isEmpty() && offset > 0) {
+            total = obtenerTotal(search);
+        }
+
+        return PagedResponse.of(data, total, page, pageSize);
+    }
+
+    /**
+     * Obtiene solo el total de artículos que matchean un search dado.
+     * Se usa como fallback cuando la página actual está vacía.
+     */
+    private long obtenerTotal(String search) {
+        String sql = "SELECT total_records FROM p_list_articulo(" +
+                "p_accion := 'L', p_offset := 0, p_limit := 1, p_search := ?) LIMIT 1";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (search == null || search.isBlank()) {
+                stmt.setNull(1, Types.VARCHAR);
+            } else {
+                stmt.setString(1, search.trim());
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getLong(1);
+            }
+        } catch (SQLException e) {
+            log.warn("Fallback de total falló: {}", e.getMessage());
+        }
+        return 0L;
     }
 
     /**
@@ -162,20 +254,31 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
     }
 
     /**
-     * Mapear ResultSet a ArticuloResponse
+     * Mapear ResultSet a ArticuloResponse. Usa nombres de columna en vez de
+     * índices para tolerar columnas extra (total_records, row_number).
      */
     private ArticuloResponse mapArticuloResponse(ResultSet rs) throws SQLException {
         return ArticuloResponse.builder()
-                .codArticulo(rs.getString(1))
-                .codLinea(rs.getInt(2))
-                .linea(rs.getString(3))
-                .descripcion(rs.getString(4))
-                .descripcion2(rs.getString(5))
-                .stockActual(rs.getInt(6))
-                .precioActual(rs.getDouble(7))
+                .codArticulo(rs.getString("cod_articulo"))
+                .codLinea(rs.getInt("cod_linea"))
+                .linea(rs.getString("linea"))
+                .descripcion(rs.getString("descripcion"))
+                .descripcion2(rs.getString("descripcion2"))
+                .stockActual(rs.getInt("total_stock"))
+                .precioActual(rs.getDouble("precio_actual"))
                 .precioSinFactura(safeGetDouble(rs, "precio_sin_factura"))
-                .audUsuario(rs.getInt(8))
+                .audUsuario(rs.getInt("aud_usuario"))
+                .rowNumber(safeGetLong(rs, "row_number"))
                 .build();
+    }
+
+    private long safeGetLong(ResultSet rs, String column) {
+        try {
+            long val = rs.getLong(column);
+            return rs.wasNull() ? 0L : val;
+        } catch (SQLException e) {
+            return 0L;
+        }
     }
 
     private double safeGetDouble(ResultSet rs, String column) {

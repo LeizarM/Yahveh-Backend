@@ -28,7 +28,7 @@ public class TelefonoClienteResource {
     SecurityUtils securityUtils;
 
     @GET
-    @RolesAllowed({"admin", "user"})
+    @RolesAllowed({"admin", "lim"})
     public Response listar() {
         log.info("GET /api/telefonos-cliente - Usuario: {}", securityUtils.getCurrentUsername());
 
@@ -39,7 +39,7 @@ public class TelefonoClienteResource {
 
     @GET
     @Path("/{codTlfCliente}")
-    @RolesAllowed({"admin", "user"})
+    @RolesAllowed({"admin", "lim"})
     public Response buscarPorCodigo(@PathParam("codTlfCliente") long codTlfCliente) {
         log.info("GET /api/telefonos-cliente/{} - Usuario: {}",
                 codTlfCliente, securityUtils.getCurrentUsername());
@@ -51,7 +51,7 @@ public class TelefonoClienteResource {
 
     @GET
     @Path("/cliente/{codCliente}")
-    @RolesAllowed({"admin", "user"})
+    @RolesAllowed({"admin", "lim"})
     public Response listarPorCliente(@PathParam("codCliente") long codCliente) {
         log.info("GET /api/telefonos-cliente/cliente/{} - Usuario: {}",
                 codCliente, securityUtils.getCurrentUsername());
@@ -62,7 +62,7 @@ public class TelefonoClienteResource {
     }
 
     @POST
-    @RolesAllowed({"admin", "user"})
+    @RolesAllowed({"admin", "lim"})
     public Response crear(TelefonoClienteRequest request) {
         log.info("POST /api/telefonos-cliente - Usuario: {} - Cliente: {}",
                 securityUtils.getCurrentUsername(), request.getCodCliente());
@@ -76,7 +76,7 @@ public class TelefonoClienteResource {
 
     @PUT
     @Path("/{codTlfCliente}")
-    @RolesAllowed({"admin", "user"})
+    @RolesAllowed({"admin", "lim"})
     public Response actualizar(
             @PathParam("codTlfCliente") long codTlfCliente,
             TelefonoClienteRequest request) {
@@ -90,7 +90,7 @@ public class TelefonoClienteResource {
 
     @DELETE
     @Path("/{codTlfCliente}")
-    @RolesAllowed({"admin", "user"})
+    @RolesAllowed({"admin", "lim"})
     public Response eliminar(@PathParam("codTlfCliente") long codTlfCliente) {
         log.info("DELETE /api/telefonos-cliente/{} - Usuario: {}",
                 codTlfCliente, securityUtils.getCurrentUsername());

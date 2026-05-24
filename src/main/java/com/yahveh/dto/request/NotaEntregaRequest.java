@@ -15,6 +15,8 @@ public class NotaEntregaRequest {
     private LocalDate fecha;
     private String direccion;
     private String zona;
+    private String nit;
+    private Integer codEmpleado;
     private List<DetalleNotaEntregaRequest> detalles;
 
 }

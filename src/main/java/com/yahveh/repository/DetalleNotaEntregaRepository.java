@@ -136,20 +136,22 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
     }
 
     private DetalleNotaEntregaResponse mapDetalleResponse(ResultSet rs) throws SQLException {
+        // ⭐ Usar nombres de columnas (más robusto que índices) y agregar precio_con_descuento
         return DetalleNotaEntregaResponse.builder()
-                .codDetalle(rs.getInt(1))
-                .codNotaEntrega(rs.getInt(2))
-                .codArticulo(rs.getString(3))
-                .descripcionArticulo(rs.getString(4))
-                .descripcion2Articulo(rs.getString(5))
-                .lineaArticulo(rs.getString(6))
-                .codLinea(rs.getInt(7))
-                .cantidad(rs.getInt(8))
-                .precioUnitario(rs.getFloat(9))
-                .precioTotal(rs.getFloat(10))
-                .precioSinFactura(rs.getFloat(11))
-                .audUsuario(rs.getInt(12))
+                .codDetalle(rs.getInt("cod_detalle"))
+                .codNotaEntrega(rs.getInt("cod_nota_entrega"))
+                .codArticulo(rs.getString("cod_articulo"))
+                .descripcionArticulo(rs.getString("descripcion_articulo"))
+                .descripcion2Articulo(rs.getString("descripcion2_articulo"))
+                .lineaArticulo(rs.getString("linea_articulo"))
+                .codLinea(rs.getInt("cod_linea"))
+                .cantidad(rs.getInt("cantidad"))
+                .precioUnitario(rs.getFloat("precio_unitario"))
+                .precioTotal(rs.getFloat("precio_total"))
+                .precioSinFactura(rs.getFloat("precio_sin_factura"))
                 .descuento(safeGetFloat(rs, "descuento"))
+                .precioConDescuento(safeGetFloat(rs, "precio_con_descuento"))
+                .audUsuario(rs.getInt("aud_usuario"))
                 .build();
     }
 

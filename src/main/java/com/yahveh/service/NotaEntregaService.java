@@ -37,13 +37,31 @@ public class NotaEntregaService {
     ReporteService reporteService;
 
     /**
-     * Listar notas válidas — admin ve todas, vendedor solo las suyas
+     * Helper: obtiene el codEmpleado del usuario actual
+     */
+    private Integer obtenerCodEmpleadoActual() {
+        Integer codEmpleado = notaEntregaRepository.obtenerCodEmpleadoDeUsuario(securityUtils.getCurrentUserId());
+        if (codEmpleado == null) {
+            log.warn("El usuario {} no tiene codEmpleado asociado", securityUtils.getCurrentUsername());
+        }
+        return codEmpleado;
+    }
+
+    /**
+     * Listar notas válidas — admin ve todas, vendedor solo las suyas (filtradas por codEmpleado)
      */
     public List<NotaEntregaResponse> listar() {
         log.info("Listando notas de entrega válidas");
-        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
-                ? notaEntregaRepository.listarTodas()
-                : notaEntregaRepository.listarPorUsuario(securityUtils.getCurrentUserId());
+        List<NotaEntregaResponse> notas;
+
+        if (securityUtils.isAdmin()) {
+            notas = notaEntregaRepository.listarTodas();
+        } else {
+            Integer codEmp = obtenerCodEmpleadoActual();
+            notas = codEmp != null
+                    ? notaEntregaRepository.listarPorEmpleado(codEmp)
+                    : new ArrayList<>();
+        }
 
         notas.forEach(nota ->
                 nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
@@ -55,9 +73,16 @@ public class NotaEntregaService {
      */
     public List<NotaEntregaResponse> listarTodasConAnuladas() {
         log.info("Listando todas las notas de entrega (válidas y anuladas)");
-        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
-                ? notaEntregaRepository.listarTodasConAnuladas()
-                : notaEntregaRepository.listarTodasConAnuladasPorUsuario(securityUtils.getCurrentUserId());
+        List<NotaEntregaResponse> notas;
+
+        if (securityUtils.isAdmin()) {
+            notas = notaEntregaRepository.listarTodasConAnuladas();
+        } else {
+            Integer codEmp = obtenerCodEmpleadoActual();
+            notas = codEmp != null
+                    ? notaEntregaRepository.listarTodasConAnuladasPorEmpleado(codEmp)
+                    : new ArrayList<>();
+        }
 
         notas.forEach(nota ->
                 nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
@@ -69,9 +94,16 @@ public class NotaEntregaService {
      */
     public List<NotaEntregaResponse> listarAnuladas() {
         log.info("Listando notas de entrega anuladas");
-        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
-                ? notaEntregaRepository.listarAnuladas()
-                : notaEntregaRepository.listarAnuladasPorUsuario(securityUtils.getCurrentUserId());
+        List<NotaEntregaResponse> notas;
+
+        if (securityUtils.isAdmin()) {
+            notas = notaEntregaRepository.listarAnuladas();
+        } else {
+            Integer codEmp = obtenerCodEmpleadoActual();
+            notas = codEmp != null
+                    ? notaEntregaRepository.listarAnuladasPorEmpleado(codEmp)
+                    : new ArrayList<>();
+        }
 
         notas.forEach(nota ->
                 nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
@@ -92,9 +124,16 @@ public class NotaEntregaService {
      */
     public List<NotaEntregaResponse> listarPorCliente(int codCliente) {
         log.info("Listando notas de entrega del cliente: {}", codCliente);
-        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
-                ? notaEntregaRepository.listarPorCliente(codCliente)
-                : notaEntregaRepository.listarPorClientePorUsuario(codCliente, securityUtils.getCurrentUserId());
+        List<NotaEntregaResponse> notas;
+
+        if (securityUtils.isAdmin()) {
+            notas = notaEntregaRepository.listarPorCliente(codCliente);
+        } else {
+            Integer codEmp = obtenerCodEmpleadoActual();
+            notas = codEmp != null
+                    ? notaEntregaRepository.listarPorClientePorEmpleado(codCliente, codEmp)
+                    : new ArrayList<>();
+        }
 
         notas.forEach(nota ->
                 nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
@@ -106,9 +145,16 @@ public class NotaEntregaService {
      */
     public List<NotaEntregaResponse> listarPorFechas(LocalDate fechaDesde, LocalDate fechaHasta) {
         log.info("Listando notas de entrega entre {} y {}", fechaDesde, fechaHasta);
-        List<NotaEntregaResponse> notas = securityUtils.isAdmin()
-                ? notaEntregaRepository.listarPorFechas(fechaDesde, fechaHasta)
-                : notaEntregaRepository.listarPorFechasPorUsuario(fechaDesde, fechaHasta, securityUtils.getCurrentUserId());
+        List<NotaEntregaResponse> notas;
+
+        if (securityUtils.isAdmin()) {
+            notas = notaEntregaRepository.listarPorFechas(fechaDesde, fechaHasta);
+        } else {
+            Integer codEmp = obtenerCodEmpleadoActual();
+            notas = codEmp != null
+                    ? notaEntregaRepository.listarPorFechasPorEmpleado(fechaDesde, fechaHasta, codEmp)
+                    : new ArrayList<>();
+        }
 
         notas.forEach(nota ->
                 nota.setDetalles(detalleRepository.listarPorNotaEntrega(nota.getCodNotaEntrega())));
@@ -121,14 +167,21 @@ public class NotaEntregaService {
 
         long audUsuario = securityUtils.getCurrentUserId();
 
+        // ⭐ Determinar el codEmpleado: usar el del request si viene, sino el del usuario actual
+        Integer codEmpleado = request.getCodEmpleado() != null
+                ? request.getCodEmpleado()
+                : obtenerCodEmpleadoActual();
+
         // Crear la nota de entrega (siempre con estado = 1 VÁLIDO)
-        // ⭐ Ahora incluye codEmpleado
+        // ⭐ Ahora incluye nit y codEmpleado
         long codNotaEntrega = notaEntregaRepository.crearNotaEntrega(
                 request.getCodCliente(),
                 request.getFecha(),
                 request.getDireccion(),
                 request.getZona(),
-                audUsuario
+                audUsuario,
+                request.getNit(),
+                codEmpleado
         );
 
         // Agregar detalles si existen
@@ -156,12 +209,15 @@ public class NotaEntregaService {
         long audUsuario = securityUtils.getCurrentUserId();
 
         // ⭐ Ya no se pasa codCliente (no se puede cambiar el cliente)
+        // ⭐ Ahora también pasa nit y codEmpleado (opcionales)
         notaEntregaRepository.actualizarNotaEntrega(
                 codNotaEntrega,
                 request.getFecha(),
                 request.getDireccion(),
                 request.getZona(),
-                audUsuario
+                audUsuario,
+                request.getNit(),
+                request.getCodEmpleado()
         );
 
         return buscarPorCodigo(codNotaEntrega);
@@ -225,6 +281,7 @@ public class NotaEntregaService {
             item.put("cantidad", detalle.getCantidad());
             item.put("precioUnitario", detalle.getPrecioUnitario());
             item.put("descuento", detalle.getDescuento());
+            item.put("precioConDescuento", detalle.getPrecioConDescuento());    // ⭐ Nuevo
             item.put("precioTotal", detalle.getPrecioTotal());
             item.put("precioSinFactura", detalle.getPrecioSinFactura());
             item.put("subtotalSinFactura", detalle.getSubtotalSinFactura());
@@ -241,6 +298,7 @@ public class NotaEntregaService {
             item.put("cantidad", detalle.getCantidad());
             item.put("precioUnitario", detalle.getPrecioUnitario());
             item.put("descuento", detalle.getDescuento());
+            item.put("precioConDescuento", detalle.getPrecioConDescuento());    // ⭐ Nuevo
             item.put("precioTotal", detalle.getPrecioTotal());
             item.put("precioSinFactura", detalle.getPrecioSinFactura());
             item.put("subtotalSinFactura", detalle.getSubtotalSinFactura());
@@ -261,6 +319,8 @@ public class NotaEntregaService {
         parametros.put("telefonos", reporte.getTelefonos());
         parametros.put("estado", reporte.getEstado());                  // ⭐ Nuevo
         parametros.put("estadoTexto", reporte.getEstadoTexto());        // ⭐ Nuevo
+        parametros.put("nombreEmpleado", reporte.getNombreEmpleado() != null
+                ? reporte.getNombreEmpleado() : "Sin asignar");          // ⭐ Nuevo
         parametros.put("totalConFactura", reporte.getTotalConFactura());
         parametros.put("totalSinFactura", reporte.getTotalSinFactura());
 

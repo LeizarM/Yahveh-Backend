@@ -19,5 +19,7 @@ public class DetalleNotaEntrega {
     private float precioUnitario;
     private float precioTotal;
     private float precioSinFactura;
+    private float descuento;
+    private float precioConDescuento;
     private int audUsuario;
 }

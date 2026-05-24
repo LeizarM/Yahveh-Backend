@@ -2,6 +2,7 @@ package com.yahveh.service;
 
 import com.yahveh.dto.request.ArticuloRequest;
 import com.yahveh.dto.response.ArticuloResponse;
+import com.yahveh.dto.response.PagedResponse;
 import com.yahveh.exception.BusinessException;
 import com.yahveh.exception.NotFoundException;
 import com.yahveh.model.Articulo;
@@ -24,11 +25,20 @@ public class ArticuloService {
     LineaRepository lineaRepository;
 
     /**
-     * Listar todos los artículos
+     * Listar todos los artículos (sin paginación). Mantener por compatibilidad.
      */
     public List<ArticuloResponse> listarTodos() {
         log.info("Listando todos los artículos");
         return articuloRepository.listarTodosCompleto();
+    }
+
+    /**
+     * ⭐ Listar artículos paginados desde la BD (server-side).
+     * Pensado para catálogos grandes (10k+ registros).
+     */
+    public PagedResponse<ArticuloResponse> listarPaginado(String search, int page, int pageSize) {
+        log.info("Listando artículos paginados — page={}, pageSize={}, search='{}'", page, pageSize, search);
+        return articuloRepository.listarPaginado(search, page, pageSize);
     }
 
 

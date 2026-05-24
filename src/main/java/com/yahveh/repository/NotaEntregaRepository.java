@@ -41,6 +41,29 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
         return executeQueryList(sql, this::mapNotaEntregaResponse);
     }
 
+    /**
+     * Obtener el codEmpleado de un usuario dado su codUsuario
+     */
+    public Integer obtenerCodEmpleadoDeUsuario(int codUsuario) {
+        String sql = "SELECT \"codEmpleado\" FROM tb_usuario WHERE \"codUsuario\" = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, codUsuario);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    int codEmp = rs.getInt(1);
+                    return rs.wasNull() ? null : codEmp;
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error al obtener codEmpleado del usuario {}", codUsuario, e);
+        }
+        return null;
+    }
+
 
     /**
      * Listar todas las notas (válidas y anuladas)
@@ -84,54 +107,59 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
         return executeQueryList(sql, this::mapNotaEntregaResponse, fechaDesde, fechaHasta);
     }
 
-    // ── Listados filtrados por vendedor (usuario no-admin) ──────────────────
+    // ── Listados filtrados por empleado (usuario no-admin) ──────────────────
+    // ⭐ Ahora filtran por codEmpleado en lugar de aud_usuario para mejor trazabilidad
 
-    public List<NotaEntregaResponse> listarPorUsuario(int userId) {
-        String sql = "SELECT * FROM p_list_nota_entrega(p_estado := 1) WHERE aud_usuario = ?";
-        return executeQueryList(sql, this::mapNotaEntregaResponse, userId);
+    public List<NotaEntregaResponse> listarPorEmpleado(int codEmpleado) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_estado := 1, p_codempleado := ?)";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, codEmpleado);
     }
 
-    public List<NotaEntregaResponse> listarTodasConAnuladasPorUsuario(int userId) {
-        String sql = "SELECT * FROM p_list_nota_entrega() WHERE aud_usuario = ?";
-        return executeQueryList(sql, this::mapNotaEntregaResponse, userId);
+    public List<NotaEntregaResponse> listarTodasConAnuladasPorEmpleado(int codEmpleado) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_codempleado := ?)";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, codEmpleado);
     }
 
-    public List<NotaEntregaResponse> listarAnuladasPorUsuario(int userId) {
-        String sql = "SELECT * FROM p_list_nota_entrega(p_estado := 0) WHERE aud_usuario = ?";
-        return executeQueryList(sql, this::mapNotaEntregaResponse, userId);
+    public List<NotaEntregaResponse> listarAnuladasPorEmpleado(int codEmpleado) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_estado := 0, p_codempleado := ?)";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, codEmpleado);
     }
 
-    public List<NotaEntregaResponse> listarPorFechasPorUsuario(LocalDate fechaDesde, LocalDate fechaHasta, int userId) {
-        String sql = "SELECT * FROM p_list_nota_entrega(p_fecha_desde := ?, p_fecha_hasta := ?, p_estado := 1) WHERE aud_usuario = ?";
-        return executeQueryList(sql, this::mapNotaEntregaResponse, fechaDesde, fechaHasta, userId);
+    public List<NotaEntregaResponse> listarPorFechasPorEmpleado(LocalDate fechaDesde, LocalDate fechaHasta, int codEmpleado) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_fecha_desde := ?, p_fecha_hasta := ?, p_estado := 1, p_codempleado := ?)";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, fechaDesde, fechaHasta, codEmpleado);
     }
 
-    public List<NotaEntregaResponse> listarPorClientePorUsuario(long codCliente, int userId) {
-        String sql = "SELECT * FROM p_list_nota_entrega(p_codcliente := ?, p_estado := 1) WHERE aud_usuario = ?";
-        return executeQueryList(sql, this::mapNotaEntregaResponse, codCliente, userId);
+    public List<NotaEntregaResponse> listarPorClientePorEmpleado(long codCliente, int codEmpleado) {
+        String sql = "SELECT * FROM p_list_nota_entrega(p_codcliente := ?, p_estado := 1, p_codempleado := ?)";
+        return executeQueryList(sql, this::mapNotaEntregaResponse, codCliente, codEmpleado);
     }
 
     // ────────────────────────────────────────────────────────────────────────
 
     /**
      * Crear nueva nota de entrega
+     * ⭐ Ahora incluye nit y codEmpleado (snapshot histórico)
      */
     public int crearNotaEntrega(long codCliente, LocalDate fecha,
-                                String direccion, String zona, long audUsuario) {
+                                String direccion, String zona, long audUsuario,
+                                String nit, Integer codEmpleado) {
         String sql = """
-        SELECT p_error, p_errormsg, p_result 
+        SELECT p_error, p_errormsg, p_result
         FROM p_abm_nota_entrega(
-            p_codcliente := ?::BIGINT, 
-            p_fecha := ?::DATE, 
-            p_direccion := ?::VARCHAR, 
-            p_zona := ?::VARCHAR, 
-            p_audusuario := ?::BIGINT, 
-            p_accion := 'I'::VARCHAR
+            p_codcliente := ?::BIGINT,
+            p_fecha := ?::DATE,
+            p_direccion := ?::VARCHAR,
+            p_zona := ?::VARCHAR,
+            p_audusuario := ?::BIGINT,
+            p_accion := 'I'::VARCHAR,
+            p_nit := ?::VARCHAR,
+            p_codempleado := ?::BIGINT
         )
         """;
 
         AbmResult result = executeQuerySingle(sql, this::mapAbmResult,
-                codCliente, fecha, direccion, zona, audUsuario)
+                codCliente, fecha, direccion, zona, audUsuario, nit, codEmpleado)
                 .orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
 
         if (!result.isSuccess()) {
@@ -145,23 +173,27 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
 
     /**
      * Actualizar nota de entrega
+     * ⭐ Ahora incluye nit y codEmpleado opcionales
      */
     public void actualizarNotaEntrega(long codNotaEntrega, LocalDate fecha,
-                                      String direccion, String zona, long audUsuario) {
+                                      String direccion, String zona, long audUsuario,
+                                      String nit, Integer codEmpleado) {
         String sql = """
-        SELECT p_error, p_errormsg, p_result 
+        SELECT p_error, p_errormsg, p_result
         FROM p_abm_nota_entrega(
-            p_codnotaentrega := ?::BIGINT, 
-            p_fecha := ?::DATE, 
-            p_direccion := ?::VARCHAR, 
-            p_zona := ?::VARCHAR, 
-            p_audusuario := ?::BIGINT, 
-            p_accion := 'U'::VARCHAR
+            p_codnotaentrega := ?::BIGINT,
+            p_fecha := ?::DATE,
+            p_direccion := ?::VARCHAR,
+            p_zona := ?::VARCHAR,
+            p_audusuario := ?::BIGINT,
+            p_accion := 'U'::VARCHAR,
+            p_nit := ?::VARCHAR,
+            p_codempleado := ?::BIGINT
         )
         """;
 
         AbmResult result = executeQuerySingle(sql, this::mapAbmResult,
-                codNotaEntrega, fecha, direccion, zona, audUsuario)
+                codNotaEntrega, fecha, direccion, zona, audUsuario, nit, codEmpleado)
                 .orElseThrow(() -> new RuntimeException("Error al ejecutar procedimiento"));
 
         if (!result.isSuccess()) {
@@ -248,6 +280,11 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                     row.put("totalSinFactura", rs.getFloat("total_sin_factura"));
                     row.put("totalArticulos", rs.getInt("total_articulos"));
 
+                    // ⭐ Empleado que creó la nota
+                    long codEmpVal = rs.getLong("cod_empleado");
+                    row.put("codEmpleado", rs.wasNull() ? null : codEmpVal);
+                    row.put("nombreEmpleado", rs.getString("nombre_empleado"));
+
                     // Detalle
                     row.put("codArticulo", rs.getString("cod_articulo"));
                     row.put("lineaArticulo", rs.getString("linea_articulo"));
@@ -255,6 +292,7 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                     row.put("cantidad", rs.getInt("cantidad"));
                     row.put("precioUnitario", rs.getFloat("precio_unitario"));
                     row.put("descuento", rs.getFloat("descuento"));
+                    row.put("precioConDescuento", rs.getFloat("precio_con_descuento"));  // ⭐ Nuevo
                     row.put("precioTotal", rs.getFloat("precio_total"));
                     row.put("precioSinFactura", rs.getFloat("precio_sin_factura"));
                     row.put("subtotalSinFactura", rs.getFloat("subtotal_sin_factura"));
@@ -283,6 +321,7 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                         .cantidad((Integer) row.get("cantidad"))
                         .precioUnitario((Float) row.get("precioUnitario"))
                         .descuento((Float) row.get("descuento"))
+                        .precioConDescuento((Float) row.get("precioConDescuento"))   // ⭐ Nuevo
                         .precioTotal((Float) row.get("precioTotal"))
                         .precioSinFactura((Float) row.get("precioSinFactura"))
                         .subtotalSinFactura((Float) row.get("subtotalSinFactura"))
@@ -301,6 +340,8 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                 .telefonos((String) primerRegistro.get("telefonos"))
                 .estado((Integer) primerRegistro.get("estado"))                // ⭐ Nuevo
                 .estadoTexto((String) primerRegistro.get("estadoTexto"))       // ⭐ Nuevo
+                .codEmpleado((Long) primerRegistro.get("codEmpleado"))         // ⭐ Nuevo
+                .nombreEmpleado((String) primerRegistro.get("nombreEmpleado")) // ⭐ Nuevo
                 .totalConFactura((Float) primerRegistro.get("totalGeneral"))
                 .totalSinFactura((Float) primerRegistro.get("totalSinFactura"))
                 .totalArticulos((Integer) primerRegistro.get("totalArticulos"))
@@ -310,8 +351,12 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
 
     /**
      * Mapear ResultSet a NotaEntregaResponse
+     * ⭐ Ahora incluye nit y codEmpleado
      */
     private NotaEntregaResponse mapNotaEntregaResponse(ResultSet rs) throws SQLException {
+        int codEmp = rs.getInt("cod_empleado");
+        Integer codEmpleado = rs.wasNull() ? null : codEmp;
+
         return NotaEntregaResponse.builder()
                 .codNotaEntrega(rs.getInt("cod_nota_entrega"))
                 .codCliente(rs.getInt("cod_cliente"))
@@ -319,6 +364,8 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                 .fecha(rs.getDate("fecha").toLocalDate())
                 .direccion(rs.getString("direccion"))
                 .zona(rs.getString("zona"))
+                .nit(rs.getString("nit"))
+                .codEmpleado(codEmpleado)
                 .audUsuario(rs.getInt("aud_usuario"))
                 .nombreEmpleado(rs.getString("nombre_empleado"))
                 .audFecha(rs.getTimestamp("aud_fecha").toLocalDateTime())
