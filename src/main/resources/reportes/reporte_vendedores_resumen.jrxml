@@ -14,6 +14,7 @@
   <field name="fecha" class="java.time.LocalDate"/>
   <field name="codNotaEntrega" class="java.lang.Long"/>
   <field name="nombreCliente" class="java.lang.String"/>
+  <field name="nit" class="java.lang.String"/>
   <field name="direccion" class="java.lang.String"/>
   <field name="zona" class="java.lang.String"/>
   <field name="cantidadArticulos" class="java.lang.Integer"/>

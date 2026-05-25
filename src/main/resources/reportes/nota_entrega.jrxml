@@ -26,8 +26,14 @@
 	<field name="descuento" class="java.lang.Float"/>
 	<field name="precioConDescuento" class="java.lang.Float"/>
 	<field name="tipoCopia" class="java.lang.String"/>
-	<variable name="totalSinFacturaCalculado" class="java.lang.Float" resetType="Group" resetGroup="tipoCopiaGroup" calculation="Sum">
-		<variableExpression><![CDATA[($F{subtotalSinFactura} != null && $F{subtotalSinFactura} > 0f) ? $F{subtotalSinFactura} : ((float)$F{cantidad} * (($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))))]]></variableExpression>
+	<!-- ⭐ Total SIN descuento (precio original × cantidad) — se resetea por copia -->
+	<variable name="totalSinDescuento" class="java.lang.Float" resetType="Group" resetGroup="tipoCopiaGroup" calculation="Sum">
+		<variableExpression><![CDATA[(float)$F{cantidad} * $F{precioUnitario}]]></variableExpression>
+		<initialValueExpression><![CDATA[0.0f]]></initialValueExpression>
+	</variable>
+	<!-- ⭐ Total CON descuento aplicado (precio con descuento × cantidad) -->
+	<variable name="totalConDescuento" class="java.lang.Float" resetType="Group" resetGroup="tipoCopiaGroup" calculation="Sum">
+		<variableExpression><![CDATA[($F{precioTotal} != null && $F{precioTotal} > 0f) ? $F{precioTotal} : ((float)$F{cantidad} * (($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))))]]></variableExpression>
 		<initialValueExpression><![CDATA[0.0f]]></initialValueExpression>
 	</variable>
 	<group name="tipoCopiaGroup">
@@ -278,7 +284,7 @@
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font size="4" isBold="true"/>
 					</textElement>
-					<text><![CDATA[Sin Factura]]></text>
+					<text><![CDATA[Descuento]]></text>
 				</staticText>
 				<staticText>
 					<reportElement mode="Opaque" x="470" y="64" width="55" height="6" backcolor="#E0E0E0" uuid="87d4dd01-e717-4844-a12d-11137d31a131"/>
@@ -288,7 +294,7 @@
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font size="3" isBold="true"/>
 					</textElement>
-					<text><![CDATA[Precio]]></text>
+					<text><![CDATA[Precio con desc.]]></text>
 				</staticText>
 				<staticText>
 					<reportElement mode="Opaque" x="525" y="64" width="55" height="6" backcolor="#E0E0E0" uuid="594de77d-a265-4009-a0ee-f1744930b8e1"/>
@@ -330,6 +336,7 @@
 					</textElement>
 					<text><![CDATA[TOTAL]]></text>
 				</staticText>
+				<!-- TOTAL SIN descuento (debajo de la columna SubTotal sin descuento) -->
 				<textField pattern="#,##0.00">
 					<reportElement mode="Opaque" x="415" y="2" width="55" height="12" backcolor="#E0E0E0" uuid="27d1941a-6125-4a75-9ccd-15845dcd95bb"/>
 					<box rightPadding="2">
@@ -338,8 +345,9 @@
 					<textElement textAlignment="Right" verticalAlignment="Middle">
 						<font size="6" isBold="true"/>
 					</textElement>
-					<textFieldExpression><![CDATA[$P{totalConFactura}]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$V{totalSinDescuento}]]></textFieldExpression>
 				</textField>
+				<!-- TOTAL CON descuento aplicado (debajo de Descuento > SubTotal) -->
 				<textField pattern="#,##0.00">
 					<reportElement mode="Opaque" x="525" y="2" width="55" height="12" backcolor="#E0E0E0" uuid="c5fda387-a195-41c3-a2b5-4dac821e0cc7"/>
 					<box rightPadding="2">
@@ -348,7 +356,7 @@
 					<textElement textAlignment="Right" verticalAlignment="Middle">
 						<font size="6" isBold="true"/>
 					</textElement>
-					<textFieldExpression><![CDATA[($P{totalSinFactura} != null && $P{totalSinFactura} > 0f) ? $P{totalSinFactura} : $V{totalSinFacturaCalculado}]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$V{totalConDescuento}]]></textFieldExpression>
 				</textField>
 				<line>
 					<reportElement x="0" y="18" width="762" height="1" uuid="7d96d5c7-89c6-462c-a317-82a899f3d58b">
@@ -420,7 +428,8 @@
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="4"/>
 				</textElement>
-				<textFieldExpression><![CDATA[($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))]]></textFieldExpression>
+				<!-- ⭐ Precio ORIGINAL (sin descuento aplicado) -->
+				<textFieldExpression><![CDATA[$F{precioUnitario}]]></textFieldExpression>
 			</textField>
 			<textField pattern="#,##0.0'%'" isBlankWhenNull="true">
 				<reportElement x="375" y="0" width="40" height="10" uuid="f1e2d3c4-b5a6-7890-abcd-ef1234567892"/>
@@ -440,7 +449,8 @@
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="4"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{precioTotal}]]></textFieldExpression>
+				<!-- ⭐ SubTotal SIN descuento = cantidad × precio original -->
+				<textFieldExpression><![CDATA[(float)$F{cantidad} * $F{precioUnitario}]]></textFieldExpression>
 			</textField>
 			<textField pattern="#,##0.00">
 				<reportElement x="470" y="0" width="55" height="10" uuid="77cea099-4fa2-4cc2-89b1-397e995e5bc7"/>
@@ -450,7 +460,8 @@
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="4"/>
 				</textElement>
-				<textFieldExpression><![CDATA[($F{precioSinFactura} != null && $F{precioSinFactura} > 0f) ? $F{precioSinFactura} : (($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f)))]]></textFieldExpression>
+				<!-- ⭐ Precio CON descuento aplicado: si viene del SP usarlo, sino calcularlo -->
+				<textFieldExpression><![CDATA[($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))]]></textFieldExpression>
 			</textField>
 			<textField pattern="#,##0.00">
 				<reportElement x="525" y="0" width="55" height="10" uuid="220e200b-0ec0-46bc-a9aa-18f22a00f73a"/>
@@ -460,7 +471,8 @@
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="4"/>
 				</textElement>
-				<textFieldExpression><![CDATA[($F{subtotalSinFactura} != null && $F{subtotalSinFactura} > 0f) ? $F{subtotalSinFactura} : ((float)$F{cantidad} * (($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))))]]></textFieldExpression>
+				<!-- ⭐ SubTotal CON descuento = cantidad × precio con descuento -->
+				<textFieldExpression><![CDATA[($F{precioTotal} != null && $F{precioTotal} > 0f) ? $F{precioTotal} : ((float)$F{cantidad} * (($F{precioConDescuento} != null && $F{precioConDescuento} > 0f) ? $F{precioConDescuento} : ($F{precioUnitario} * (1.0f - ($F{descuento} != null ? $F{descuento} : 0.0f) / 100.0f))))]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="580" y="0" width="182" height="10" uuid="3b2f5e64-80e7-4a5f-ad09-878ec16a6fe0"/>

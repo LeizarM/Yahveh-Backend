@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="reporte_movimientos_inventario"
+              pageWidth="842" pageHeight="595" orientation="Landscape"
+              columnWidth="812" leftMargin="15" rightMargin="15" topMargin="10" bottomMargin="10"
+              uuid="b2000000-0000-0001-0000-000000000001">
+
+  <parameter name="fechaDesde" class="java.util.Date"/>
+  <parameter name="fechaHasta" class="java.util.Date"/>
+  <parameter name="codArticulo" class="java.lang.String" isForPrompting="false">
+    <defaultValueExpression><![CDATA["TODOS"]]></defaultValueExpression>
+  </parameter>
+
+  <field name="codInventario" class="java.lang.Long"/>
+  <field name="fecha" class="java.time.LocalDate"/>
+  <field name="codArticulo" class="java.lang.String"/>
+  <field name="descripcionArticulo" class="java.lang.String"/>
+  <field name="lineaArticulo" class="java.lang.String"/>
+  <field name="tipoMovimiento" class="java.lang.String"/>
+  <field name="cantidad" class="java.lang.Integer"/>
+  <field name="saldoAnterior" class="java.lang.Integer"/>
+  <field name="saldoNuevo" class="java.lang.Integer"/>
+  <field name="precioUnitario" class="java.math.BigDecimal"/>
+  <field name="valorTotal" class="java.math.BigDecimal"/>
+  <field name="observacion" class="java.lang.String"/>
+  <field name="nombreUsuario" class="java.lang.String"/>
+
+  <variable name="totalEntradas" class="java.lang.Integer" calculation="Sum">
+    <variableExpression><![CDATA["ENTRADA".equals($F{tipoMovimiento}) ? Math.abs($F{cantidad}) : 0]]></variableExpression>
+    <initialValueExpression><![CDATA[0]]></initialValueExpression>
+  </variable>
+  <variable name="totalSalidas" class="java.lang.Integer" calculation="Sum">
+    <variableExpression><![CDATA["SALIDA".equals($F{tipoMovimiento}) ? Math.abs($F{cantidad}) : 0]]></variableExpression>
+    <initialValueExpression><![CDATA[0]]></initialValueExpression>
+  </variable>
+  <variable name="valorTotalAcum" class="java.math.BigDecimal" calculation="Sum">
+    <variableExpression><![CDATA[$F{valorTotal}]]></variableExpression>
+    <initialValueExpression><![CDATA[java.math.BigDecimal.ZERO]]></initialValueExpression>
+  </variable>
+
+  <title>
+    <band height="78">
+      <staticText>
+        <reportElement x="0" y="2" width="812" height="18" uuid="b2000000-0000-0001-0001-000000000001"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="16" isBold="true"/></textElement>
+        <text><![CDATA[REPORTE DE MOVIMIENTOS DE INVENTARIO]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="0" y="20" width="812" height="12" uuid="b2000000-0000-0001-0001-000000000002"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[EMPRESA YAHVEH]]></text>
+      </staticText>
+      <textField pattern="dd/MM/yyyy HH:mm">
+        <reportElement x="700" y="2" width="112" height="8" uuid="b2000000-0000-0001-0001-000000000003"/>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA["Impreso: " + new java.util.Date()]]></textFieldExpression>
+      </textField>
+      <staticText>
+        <reportElement x="200" y="34" width="80" height="10" uuid="b2000000-0000-0001-0001-000000000004"/>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Período: Desde]]></text>
+      </staticText>
+      <textField pattern="dd/MM/yyyy">
+        <reportElement x="280" y="34" width="70" height="10" uuid="b2000000-0000-0001-0001-000000000005"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$P{fechaDesde}]]></textFieldExpression>
+      </textField>
+      <staticText>
+        <reportElement x="350" y="34" width="30" height="10" uuid="b2000000-0000-0001-0001-000000000006"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Hasta]]></text>
+      </staticText>
+      <textField pattern="dd/MM/yyyy">
+        <reportElement x="380" y="34" width="70" height="10" uuid="b2000000-0000-0001-0001-000000000007"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$P{fechaHasta}]]></textFieldExpression>
+      </textField>
+      <staticText>
+        <reportElement x="450" y="34" width="80" height="10" uuid="b2000000-0000-0001-0001-000000000008"/>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Artículo:]]></text>
+      </staticText>
+      <textField isBlankWhenNull="true">
+        <reportElement x="530" y="34" width="150" height="10" uuid="b2000000-0000-0001-0001-000000000009"/>
+        <textElement verticalAlignment="Middle"><font size="8"/></textElement>
+        <textFieldExpression><![CDATA[$P{codArticulo}]]></textFieldExpression>
+      </textField>
+      <line>
+        <reportElement x="0" y="50" width="812" height="1" uuid="b2000000-0000-0001-0001-00000000000a"/>
+        <graphicElement><pen lineWidth="0.5"/></graphicElement>
+      </line>
+
+      <!-- Header de columnas -->
+      <staticText>
+        <reportElement mode="Opaque" x="0" y="58" width="55" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-00000000000b"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[FECHA]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="55" y="58" width="60" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-00000000000c"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[CÓDIGO]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="115" y="58" width="180" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-00000000000d"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[DESCRIPCIÓN]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="295" y="58" width="65" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-00000000000e"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[TIPO]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="360" y="58" width="45" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-00000000000f"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[CANT.]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="405" y="58" width="50" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-000000000010"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[SALDO ANT.]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="455" y="58" width="50" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-000000000011"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[SALDO NUEVO]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="505" y="58" width="60" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-000000000012"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[P. UNIT.]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="565" y="58" width="70" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-000000000013"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[VALOR Bs.]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="635" y="58" width="177" height="18" backcolor="#E0E0E0" uuid="b2000000-0000-0001-0001-000000000014"/>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[OBSERVACIÓN]]></text>
+      </staticText>
+    </band>
+  </title>
+
+  <detail>
+    <band height="14">
+      <textField pattern="dd/MM/yyyy">
+        <reportElement x="0" y="0" width="55" height="14" uuid="b2000000-0000-0001-0002-000000000001"/>
+        <box leftPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{fecha}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="55" y="0" width="60" height="14" uuid="b2000000-0000-0001-0002-000000000002"/>
+        <box leftPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{codArticulo}]]></textFieldExpression>
+      </textField>
+      <textField isBlankWhenNull="true">
+        <reportElement x="115" y="0" width="180" height="14" uuid="b2000000-0000-0001-0002-000000000003"/>
+        <box leftPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{descripcionArticulo}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="295" y="0" width="65" height="14"
+                       forecolor='#FFFFFF'
+                       mode="Opaque"
+                       backcolor='#666666'
+                       uuid="b2000000-0000-0001-0002-000000000004">
+          <printWhenExpression><![CDATA["ENTRADA".equals($F{tipoMovimiento})]]></printWhenExpression>
+        </reportElement>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="6" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$F{tipoMovimiento}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="295" y="0" width="65" height="14"
+                       forecolor='#FFFFFF'
+                       mode="Opaque"
+                       backcolor='#B00020'
+                       uuid="b2000000-0000-0001-0002-000000000005">
+          <printWhenExpression><![CDATA["SALIDA".equals($F{tipoMovimiento})]]></printWhenExpression>
+        </reportElement>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="6" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$F{tipoMovimiento}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="295" y="0" width="65" height="14"
+                       uuid="b2000000-0000-0001-0002-000000000006">
+          <printWhenExpression><![CDATA[!"ENTRADA".equals($F{tipoMovimiento}) && !"SALIDA".equals($F{tipoMovimiento})]]></printWhenExpression>
+        </reportElement>
+        <box><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="6" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$F{tipoMovimiento}]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0">
+        <reportElement x="360" y="0" width="45" height="14" uuid="b2000000-0000-0001-0002-000000000007"/>
+        <box rightPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[Math.abs($F{cantidad})]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0">
+        <reportElement x="405" y="0" width="50" height="14" uuid="b2000000-0000-0001-0002-000000000008"/>
+        <box rightPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{saldoAnterior}]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0">
+        <reportElement x="455" y="0" width="50" height="14" uuid="b2000000-0000-0001-0002-000000000009"/>
+        <box rightPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="6" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$F{saldoNuevo}]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0.00">
+        <reportElement x="505" y="0" width="60" height="14" uuid="b2000000-0000-0001-0002-00000000000a"/>
+        <box rightPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{precioUnitario}]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0.00">
+        <reportElement x="565" y="0" width="70" height="14" uuid="b2000000-0000-0001-0002-00000000000b"/>
+        <box rightPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{valorTotal}]]></textFieldExpression>
+      </textField>
+      <textField isBlankWhenNull="true">
+        <reportElement x="635" y="0" width="177" height="14" uuid="b2000000-0000-0001-0002-00000000000c"/>
+        <box leftPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{observacion}]]></textFieldExpression>
+      </textField>
+    </band>
+  </detail>
+
+  <summary>
+    <band height="22">
+      <staticText>
+        <reportElement mode="Opaque" x="0" y="2" width="295" height="16" backcolor="#FFFF99" uuid="b2000000-0000-0001-0003-000000000001"/>
+        <box><pen lineWidth="0.5"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[TOTALES:  ]]></text>
+      </staticText>
+      <staticText>
+        <reportElement mode="Opaque" x="295" y="2" width="65" height="16" backcolor="#FFFF99" uuid="b2000000-0000-0001-0003-000000000002"/>
+        <box><pen lineWidth="0.5"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[E / S]]></text>
+      </staticText>
+      <textField pattern="#,##0">
+        <reportElement mode="Opaque" x="360" y="2" width="45" height="16" backcolor="#C8FFC8" uuid="b2000000-0000-0001-0003-000000000003"/>
+        <box><pen lineWidth="0.5"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$V{totalEntradas} + " / " + $V{totalSalidas}]]></textFieldExpression>
+      </textField>
+      <staticText>
+        <reportElement mode="Opaque" x="405" y="2" width="160" height="16" backcolor="#FFFF99" uuid="b2000000-0000-0001-0003-000000000004"/>
+        <box><pen lineWidth="0.5"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+        <text><![CDATA[VALOR TOTAL MOVIDO Bs.:  ]]></text>
+      </staticText>
+      <textField pattern="#,##0.00">
+        <reportElement mode="Opaque" x="565" y="2" width="247" height="16" backcolor="#FFFF99" uuid="b2000000-0000-0001-0003-000000000005"/>
+        <box rightPadding="4"><pen lineWidth="0.5"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$V{valorTotalAcum}]]></textFieldExpression>
+      </textField>
+    </band>
+  </summary>
+
+</jasperReport>

@@ -1,6 +1,8 @@
 package com.yahveh.service;
 
+import com.yahveh.dto.ArticuloVendedorReporteDTO;
 import com.yahveh.dto.InventarioReporteDTO;
+import com.yahveh.dto.MovimientoInventarioReporteDTO;
 import com.yahveh.dto.NotaEntregaReporteDTO;
 import com.yahveh.dto.VendedorReporteDTO;
 import com.yahveh.dto.VentaReporteDTO;
@@ -329,22 +331,88 @@ public class NotaEntregaService {
     }
 
     public byte[] generarReporteVendedores(LocalDate fechaDesde, LocalDate fechaHasta) {
-        log.info("Generando reporte de vendedores desde {} hasta {}", fechaDesde, fechaHasta);
+        return generarReporteVendedores(fechaDesde, fechaHasta, null);
+    }
 
-        List<VendedorReporteDTO> datos = notaEntregaRepository.obtenerReporteVendedores(fechaDesde, fechaHasta);
+    /**
+     * Generar reporte de vendedores, opcionalmente filtrado por un empleado.
+     * Si codEmpleado es null, devuelve todos los vendedores.
+     *
+     * El PDF resultante combina 3 secciones:
+     *   1. Resumen general por vendedor (totales de notas y Bs.)
+     *   2. Detalle de notas por vendedor
+     *   3. ⭐ Detalle de ARTÍCULOS vendidos por cada nota
+     */
+    public byte[] generarReporteVendedores(
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            Integer codEmpleado) {
+        log.info("Generando reporte de vendedores desde {} hasta {} — empleado: {}",
+                fechaDesde, fechaHasta, codEmpleado);
+
+        List<VendedorReporteDTO> datos = notaEntregaRepository.obtenerReporteVendedores(
+                fechaDesde, fechaHasta, codEmpleado);
 
         if (datos.isEmpty()) {
             throw new BusinessException("No hay datos disponibles para el período seleccionado");
         }
 
+        // ⭐ Detalle de artículos vendidos
+        List<ArticuloVendedorReporteDTO> articulos = notaEntregaRepository
+                .obtenerArticulosPorVendedor(fechaDesde, fechaHasta, codEmpleado);
+
         Map<String, Object> params = new HashMap<>();
         params.put("fechaDesde", java.sql.Date.valueOf(fechaDesde));
         params.put("fechaHasta", java.sql.Date.valueOf(fechaHasta));
+        // Si se filtra por empleado, mostramos el nombre en el título
+        params.put("vendedorFiltro",
+                codEmpleado != null && !datos.isEmpty()
+                        ? datos.get(0).getNombreVendedor()
+                        : "TODOS LOS VENDEDORES");
 
         byte[] resumen = reporteService.generarReportePDF("reporte_vendedores_resumen", params, datos);
         byte[] detalle = reporteService.generarReportePDF("reporte_vendedores_detalle", params, datos);
 
+        // ⭐ Tercer PDF: detalle de artículos vendidos por vendedor
+        byte[] articulosPdf = articulos.isEmpty()
+                ? new byte[0]
+                : reporteService.generarReportePDF("reporte_vendedores_articulos", params, articulos);
+
+        // Concatenar todos los PDFs (mergePDFs admite múltiples)
+        if (articulosPdf.length > 0) {
+            byte[] partial = reporteService.mergePDFs(resumen, detalle);
+            return reporteService.mergePDFs(partial, articulosPdf);
+        }
         return reporteService.mergePDFs(resumen, detalle);
+    }
+
+    /**
+     * Reporte de MOVIMIENTOS de inventario entre fechas.
+     * Lista cada entrada, salida o ajuste con su saldo, valor y observación.
+     */
+    public byte[] generarReporteMovimientosInventario(
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            String codArticulo) {
+        log.info("Generando reporte de movimientos: {} - {} (artículo: {})",
+                fechaDesde, fechaHasta, codArticulo);
+
+        List<MovimientoInventarioReporteDTO> datos =
+                notaEntregaRepository.obtenerReporteMovimientos(fechaDesde, fechaHasta, codArticulo);
+
+        if (datos.isEmpty()) {
+            throw new BusinessException(
+                    "No hay movimientos de inventario en el período seleccionado");
+        }
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("fechaDesde", java.sql.Date.valueOf(fechaDesde));
+        params.put("fechaHasta", java.sql.Date.valueOf(fechaHasta));
+        params.put("codArticulo",
+                codArticulo == null || codArticulo.isBlank() ? "TODOS" : codArticulo);
+
+        return reporteService.generarReportePDF(
+                "reporte_movimientos_inventario", params, datos);
     }
 
     public byte[] generarReporteInventario(LocalDate fechaDesde, LocalDate fechaHasta) {

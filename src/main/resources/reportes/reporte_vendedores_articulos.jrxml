@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="reporte_vendedores_articulos"
+              pageWidth="842" pageHeight="595" orientation="Landscape"
+              columnWidth="812" leftMargin="15" rightMargin="15" topMargin="10" bottomMargin="10"
+              uuid="c1000000-0000-0001-0000-000000000001">
+
+  <parameter name="fechaDesde" class="java.util.Date"/>
+  <parameter name="fechaHasta" class="java.util.Date"/>
+  <parameter name="vendedorFiltro" class="java.lang.String">
+    <defaultValueExpression><![CDATA["TODOS LOS VENDEDORES"]]></defaultValueExpression>
+  </parameter>
+
+  <field name="codEmpleado" class="java.lang.Long"/>
+  <field name="nombreVendedor" class="java.lang.String"/>
+  <field name="codNotaEntrega" class="java.lang.Long"/>
+  <field name="fecha" class="java.time.LocalDate"/>
+  <field name="nombreCliente" class="java.lang.String"/>
+  <field name="nit" class="java.lang.String"/>
+  <field name="direccion" class="java.lang.String"/>
+  <field name="zona" class="java.lang.String"/>
+  <field name="codDetalle" class="java.lang.Long"/>
+  <field name="codArticulo" class="java.lang.String"/>
+  <field name="descripcionArticulo" class="java.lang.String"/>
+  <field name="lineaArticulo" class="java.lang.String"/>
+  <field name="cantidad" class="java.lang.Integer"/>
+  <field name="precioUnitario" class="java.math.BigDecimal"/>
+  <field name="descuento" class="java.math.BigDecimal"/>
+  <field name="precioConDescuento" class="java.math.BigDecimal"/>
+  <field name="subtotal" class="java.math.BigDecimal"/>
+
+  <!-- ──────────────────────────── Variables ──────────────────────────── -->
+  <variable name="cantNotaGrupo" class="java.lang.Integer" resetType="Group" resetGroup="nota" calculation="Sum">
+    <variableExpression><![CDATA[$F{cantidad}]]></variableExpression>
+    <initialValueExpression><![CDATA[0]]></initialValueExpression>
+  </variable>
+  <variable name="totalNotaGrupo" class="java.math.BigDecimal" resetType="Group" resetGroup="nota" calculation="Sum">
+    <variableExpression><![CDATA[$F{subtotal}]]></variableExpression>
+    <initialValueExpression><![CDATA[java.math.BigDecimal.ZERO]]></initialValueExpression>
+  </variable>
+
+  <variable name="cantVendedorGrupo" class="java.lang.Integer" resetType="Group" resetGroup="vendedor" calculation="Sum">
+    <variableExpression><![CDATA[$F{cantidad}]]></variableExpression>
+    <initialValueExpression><![CDATA[0]]></initialValueExpression>
+  </variable>
+  <variable name="totalVendedorGrupo" class="java.math.BigDecimal" resetType="Group" resetGroup="vendedor" calculation="Sum">
+    <variableExpression><![CDATA[$F{subtotal}]]></variableExpression>
+    <initialValueExpression><![CDATA[java.math.BigDecimal.ZERO]]></initialValueExpression>
+  </variable>
+
+  <variable name="cantTotal" class="java.lang.Integer" calculation="Sum">
+    <variableExpression><![CDATA[$F{cantidad}]]></variableExpression>
+    <initialValueExpression><![CDATA[0]]></initialValueExpression>
+  </variable>
+  <variable name="totalGeneral" class="java.math.BigDecimal" calculation="Sum">
+    <variableExpression><![CDATA[$F{subtotal}]]></variableExpression>
+    <initialValueExpression><![CDATA[java.math.BigDecimal.ZERO]]></initialValueExpression>
+  </variable>
+
+  <!-- ──────────────────────────── Grupos ──────────────────────────── -->
+  <group name="vendedor" isStartNewPage="true">
+    <groupExpression><![CDATA[$F{nombreVendedor}]]></groupExpression>
+    <groupHeader>
+      <band height="22">
+        <staticText>
+          <reportElement mode="Opaque" x="0" y="2" width="812" height="18" backcolor="#2E86C1" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0001-000000000001"/>
+          <textElement verticalAlignment="Middle"><font size="10" isBold="true"/></textElement>
+          <text><![CDATA[ VENDEDOR: ]]></text>
+        </staticText>
+        <textField>
+          <reportElement x="85" y="2" width="727" height="18" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0001-000000000002"/>
+          <textElement verticalAlignment="Middle"><font size="10" isBold="true"/></textElement>
+          <textFieldExpression><![CDATA[$F{nombreVendedor}]]></textFieldExpression>
+        </textField>
+      </band>
+    </groupHeader>
+    <groupFooter>
+      <band height="18">
+        <staticText>
+          <reportElement mode="Opaque" x="0" y="2" width="500" height="14" backcolor="#D6EAF8" uuid="c1000000-0000-0001-0001-000000000003"/>
+          <box leftPadding="6"><pen lineWidth="0.6"/></box>
+          <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+          <text><![CDATA[TOTAL DEL VENDEDOR]]></text>
+        </staticText>
+        <textField pattern="#,##0">
+          <reportElement mode="Opaque" x="500" y="2" width="120" height="14" backcolor="#D6EAF8" uuid="c1000000-0000-0001-0001-000000000004"/>
+          <box rightPadding="6"><pen lineWidth="0.6"/></box>
+          <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+          <textFieldExpression><![CDATA[$V{cantVendedorGrupo} + " uds"]]></textFieldExpression>
+        </textField>
+        <textField pattern="#,##0.00">
+          <reportElement mode="Opaque" x="620" y="2" width="192" height="14" backcolor="#D6EAF8" uuid="c1000000-0000-0001-0001-000000000005"/>
+          <box rightPadding="6"><pen lineWidth="0.6"/></box>
+          <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+          <textFieldExpression><![CDATA["Bs. " + $V{totalVendedorGrupo}]]></textFieldExpression>
+        </textField>
+      </band>
+    </groupFooter>
+  </group>
+
+  <group name="nota">
+    <groupExpression><![CDATA[$F{codNotaEntrega}]]></groupExpression>
+    <groupHeader>
+      <band height="30">
+        <!-- Encabezado de nota -->
+        <staticText>
+          <reportElement mode="Opaque" x="0" y="0" width="60" height="14" backcolor="#F2F4F4" uuid="c1000000-0000-0001-0002-000000000001"/>
+          <box leftPadding="3"><pen lineWidth="0.25"/></box>
+          <textElement verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[Nota #]]></text>
+        </staticText>
+        <textField>
+          <reportElement mode="Opaque" x="60" y="0" width="60" height="14" backcolor="#F2F4F4" uuid="c1000000-0000-0001-0002-000000000002"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <textFieldExpression><![CDATA[$F{codNotaEntrega}]]></textFieldExpression>
+        </textField>
+        <textField pattern="dd/MM/yyyy">
+          <reportElement mode="Opaque" x="120" y="0" width="70" height="14" backcolor="#F2F4F4" uuid="c1000000-0000-0001-0002-000000000003"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement verticalAlignment="Middle"><font size="7"/></textElement>
+          <textFieldExpression><![CDATA[$F{fecha}]]></textFieldExpression>
+        </textField>
+        <staticText>
+          <reportElement mode="Opaque" x="190" y="0" width="40" height="14" backcolor="#F2F4F4" uuid="c1000000-0000-0001-0002-000000000004"/>
+          <box leftPadding="3"><pen lineWidth="0.25"/></box>
+          <textElement verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[Cliente:]]></text>
+        </staticText>
+        <textField isBlankWhenNull="true">
+          <reportElement mode="Opaque" x="230" y="0" width="380" height="14" backcolor="#F2F4F4" uuid="c1000000-0000-0001-0002-000000000005"/>
+          <box leftPadding="3"><pen lineWidth="0.25"/></box>
+          <textElement verticalAlignment="Middle"><font size="7"/></textElement>
+          <textFieldExpression><![CDATA[$F{nombreCliente}]]></textFieldExpression>
+        </textField>
+        <staticText>
+          <reportElement mode="Opaque" x="610" y="0" width="40" height="14" backcolor="#F2F4F4" uuid="c1000000-0000-0001-0002-000000000006"/>
+          <box leftPadding="3"><pen lineWidth="0.25"/></box>
+          <textElement verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[NIT:]]></text>
+        </staticText>
+        <textField isBlankWhenNull="true">
+          <reportElement mode="Opaque" x="650" y="0" width="162" height="14" backcolor="#F2F4F4" uuid="c1000000-0000-0001-0002-000000000007"/>
+          <box leftPadding="3"><pen lineWidth="0.25"/></box>
+          <textElement verticalAlignment="Middle"><font size="7"/></textElement>
+          <textFieldExpression><![CDATA[$F{nit}]]></textFieldExpression>
+        </textField>
+
+        <!-- Cabecera columnas de detalle -->
+        <staticText>
+          <reportElement mode="Opaque" x="0" y="14" width="80" height="14" backcolor="#34495E" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0002-000000000008"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[CÓDIGO]]></text>
+        </staticText>
+        <staticText>
+          <reportElement mode="Opaque" x="80" y="14" width="300" height="14" backcolor="#34495E" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0002-000000000009"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[ARTÍCULO]]></text>
+        </staticText>
+        <staticText>
+          <reportElement mode="Opaque" x="380" y="14" width="80" height="14" backcolor="#34495E" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0002-00000000000a"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[LÍNEA]]></text>
+        </staticText>
+        <staticText>
+          <reportElement mode="Opaque" x="460" y="14" width="50" height="14" backcolor="#34495E" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0002-00000000000b"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[CANT.]]></text>
+        </staticText>
+        <staticText>
+          <reportElement mode="Opaque" x="510" y="14" width="70" height="14" backcolor="#34495E" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0002-00000000000c"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[P. UNIT.]]></text>
+        </staticText>
+        <staticText>
+          <reportElement mode="Opaque" x="580" y="14" width="50" height="14" backcolor="#34495E" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0002-00000000000d"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[DESC %]]></text>
+        </staticText>
+        <staticText>
+          <reportElement mode="Opaque" x="630" y="14" width="80" height="14" backcolor="#34495E" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0002-00000000000e"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[P. CON DESC]]></text>
+        </staticText>
+        <staticText>
+          <reportElement mode="Opaque" x="710" y="14" width="102" height="14" backcolor="#34495E" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0002-00000000000f"/>
+          <box><pen lineWidth="0.25"/></box>
+          <textElement textAlignment="Center" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[SUBTOTAL Bs.]]></text>
+        </staticText>
+      </band>
+    </groupHeader>
+    <groupFooter>
+      <band height="16">
+        <staticText>
+          <reportElement mode="Opaque" x="0" y="2" width="460" height="12" backcolor="#FCF3CF" uuid="c1000000-0000-0001-0003-000000000001"/>
+          <box leftPadding="6"><pen lineWidth="0.3"/></box>
+          <textElement textAlignment="Right" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <text><![CDATA[Total de la nota:  ]]></text>
+        </staticText>
+        <textField pattern="#,##0">
+          <reportElement mode="Opaque" x="460" y="2" width="50" height="12" backcolor="#FCF3CF" uuid="c1000000-0000-0001-0003-000000000002"/>
+          <box rightPadding="3"><pen lineWidth="0.3"/></box>
+          <textElement textAlignment="Right" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <textFieldExpression><![CDATA[$V{cantNotaGrupo}]]></textFieldExpression>
+        </textField>
+        <staticText>
+          <reportElement mode="Opaque" x="510" y="2" width="200" height="12" backcolor="#FCF3CF" uuid="c1000000-0000-0001-0003-000000000003"/>
+          <box><pen lineWidth="0.3"/></box>
+          <textElement verticalAlignment="Middle"><font size="6"/></textElement>
+          <text><![CDATA[]]></text>
+        </staticText>
+        <textField pattern="#,##0.00">
+          <reportElement mode="Opaque" x="710" y="2" width="102" height="12" backcolor="#FCF3CF" uuid="c1000000-0000-0001-0003-000000000004"/>
+          <box rightPadding="6"><pen lineWidth="0.3"/></box>
+          <textElement textAlignment="Right" verticalAlignment="Middle"><font size="7" isBold="true"/></textElement>
+          <textFieldExpression><![CDATA[$V{totalNotaGrupo}]]></textFieldExpression>
+        </textField>
+      </band>
+    </groupFooter>
+  </group>
+
+  <!-- ──────────────────────────── Title ──────────────────────────── -->
+  <title>
+    <band height="60">
+      <staticText>
+        <reportElement x="0" y="2" width="812" height="18" uuid="c1000000-0000-0001-0004-000000000001"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="15" isBold="true"/></textElement>
+        <text><![CDATA[DETALLE DE ARTÍCULOS VENDIDOS POR VENDEDOR]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="0" y="22" width="812" height="12" uuid="c1000000-0000-0001-0004-000000000002"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="10" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$P{vendedorFiltro}]]></textFieldExpression>
+      </textField>
+      <staticText>
+        <reportElement x="250" y="38" width="80" height="10" uuid="c1000000-0000-0001-0004-000000000003"/>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Período: Desde]]></text>
+      </staticText>
+      <textField pattern="dd/MM/yyyy">
+        <reportElement x="330" y="38" width="70" height="10" uuid="c1000000-0000-0001-0004-000000000004"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$P{fechaDesde}]]></textFieldExpression>
+      </textField>
+      <staticText>
+        <reportElement x="400" y="38" width="30" height="10" uuid="c1000000-0000-0001-0004-000000000005"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Hasta]]></text>
+      </staticText>
+      <textField pattern="dd/MM/yyyy">
+        <reportElement x="430" y="38" width="70" height="10" uuid="c1000000-0000-0001-0004-000000000006"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$P{fechaHasta}]]></textFieldExpression>
+      </textField>
+    </band>
+  </title>
+
+  <!-- ──────────────────────────── Detail ──────────────────────────── -->
+  <detail>
+    <band height="12">
+      <textField>
+        <reportElement x="0" y="0" width="80" height="12" uuid="c1000000-0000-0001-0005-000000000001"/>
+        <box leftPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{codArticulo}]]></textFieldExpression>
+      </textField>
+      <textField isBlankWhenNull="true">
+        <reportElement x="80" y="0" width="300" height="12" uuid="c1000000-0000-0001-0005-000000000002"/>
+        <box leftPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{descripcionArticulo}]]></textFieldExpression>
+      </textField>
+      <textField isBlankWhenNull="true">
+        <reportElement x="380" y="0" width="80" height="12" uuid="c1000000-0000-0001-0005-000000000003"/>
+        <box leftPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{lineaArticulo}]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0">
+        <reportElement x="460" y="0" width="50" height="12" uuid="c1000000-0000-0001-0005-000000000004"/>
+        <box rightPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{cantidad}]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0.00">
+        <reportElement x="510" y="0" width="70" height="12" uuid="c1000000-0000-0001-0005-000000000005"/>
+        <box rightPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="6"/></textElement>
+        <textFieldExpression><![CDATA[$F{precioUnitario}]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0.0'%'">
+        <reportElement x="580" y="0" width="50" height="12" uuid="c1000000-0000-0001-0005-000000000006"/>
+        <box rightPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle">
+          <font size="6"/>
+        </textElement>
+        <textFieldExpression><![CDATA[$F{descuento}]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0.00">
+        <reportElement x="630" y="0" width="80" height="12" forecolor="#E67E22" uuid="c1000000-0000-0001-0005-000000000007"/>
+        <box rightPadding="3"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle">
+          <font size="6" isBold="true"/>
+        </textElement>
+        <textFieldExpression><![CDATA[$F{precioConDescuento}]]></textFieldExpression>
+      </textField>
+      <textField pattern="#,##0.00">
+        <reportElement x="710" y="0" width="102" height="12" forecolor="#27AE60" uuid="c1000000-0000-0001-0005-000000000008"/>
+        <box rightPadding="6"><pen lineWidth="0.25"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle">
+          <font size="6" isBold="true"/>
+        </textElement>
+        <textFieldExpression><![CDATA[$F{subtotal}]]></textFieldExpression>
+      </textField>
+    </band>
+  </detail>
+
+  <!-- ──────────────────────────── Summary ──────────────────────────── -->
+  <summary>
+    <band height="24">
+      <staticText>
+        <reportElement mode="Opaque" x="0" y="4" width="460" height="16" backcolor="#28B463" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0006-000000000001"/>
+        <box leftPadding="6"><pen lineWidth="0.6"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="9" isBold="true"/></textElement>
+        <text><![CDATA[TOTAL GENERAL DE ARTÍCULOS VENDIDOS:  ]]></text>
+      </staticText>
+      <textField pattern="#,##0">
+        <reportElement mode="Opaque" x="460" y="4" width="50" height="16" backcolor="#28B463" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0006-000000000002"/>
+        <box rightPadding="3"><pen lineWidth="0.6"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="9" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$V{cantTotal}]]></textFieldExpression>
+      </textField>
+      <staticText>
+        <reportElement mode="Opaque" x="510" y="4" width="200" height="16" backcolor="#28B463" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0006-000000000003"/>
+        <box leftPadding="6"><pen lineWidth="0.6"/></box>
+        <textElement verticalAlignment="Middle"><font size="9" isBold="true"/></textElement>
+        <text><![CDATA[ uds vendidas]]></text>
+      </staticText>
+      <textField pattern="#,##0.00">
+        <reportElement mode="Opaque" x="710" y="4" width="102" height="16" backcolor="#28B463" forecolor="#FFFFFF" uuid="c1000000-0000-0001-0006-000000000004"/>
+        <box rightPadding="6"><pen lineWidth="0.6"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="9" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$V{totalGeneral}]]></textFieldExpression>
+      </textField>
+    </band>
+  </summary>
+
+</jasperReport>

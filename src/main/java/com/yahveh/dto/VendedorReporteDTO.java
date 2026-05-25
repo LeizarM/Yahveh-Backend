@@ -12,10 +12,12 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class VendedorReporteDTO {
+    private Long codEmpleado;
     private String nombreVendedor;
     private LocalDate fecha;
     private Long codNotaEntrega;
     private String nombreCliente;
+    private String nit;
     private String direccion;
     private String zona;
     private Integer cantidadArticulos;

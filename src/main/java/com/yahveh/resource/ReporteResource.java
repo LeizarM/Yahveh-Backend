@@ -30,18 +30,28 @@ public class ReporteResource {
                 .build();
     }
 
+    /**
+     * Reporte de vendedores en PDF.
+     * Query param opcional `codEmpleado` para filtrar por un empleado específico.
+     * Sin el param → reporte general de todos los vendedores.
+     */
     @GET
     @Path("/vendedores/pdf/{fechaDesde}/{fechaHasta}")
     @Produces("application/pdf")
     @RolesAllowed("admin")
     public Response generarReporteVendedoresPDF(
             @PathParam("fechaDesde") String fechaDesde,
-            @PathParam("fechaHasta") String fechaHasta) {
-        log.info("Generando PDF reporte vendedores: {} - {}", fechaDesde, fechaHasta);
+            @PathParam("fechaHasta") String fechaHasta,
+            @QueryParam("codEmpleado") Integer codEmpleado) {
+        log.info("Generando PDF reporte vendedores: {} - {} (empleado: {})",
+                fechaDesde, fechaHasta, codEmpleado);
         byte[] pdfBytes = notaEntregaService.generarReporteVendedores(
-                LocalDate.parse(fechaDesde), LocalDate.parse(fechaHasta));
+                LocalDate.parse(fechaDesde), LocalDate.parse(fechaHasta), codEmpleado);
+        String filename = codEmpleado != null
+                ? "reporte_vendedor_" + codEmpleado + ".pdf"
+                : "reporte_vendedores.pdf";
         return Response.ok(pdfBytes)
-                .header("Content-Disposition", "attachment; filename=\"reporte_vendedores.pdf\"")
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                 .build();
     }
 
@@ -57,6 +67,34 @@ public class ReporteResource {
                 LocalDate.parse(fechaDesde), LocalDate.parse(fechaHasta));
         return Response.ok(pdfBytes)
                 .header("Content-Disposition", "attachment; filename=\"reporte_inventario.pdf\"")
+                .build();
+    }
+
+    /**
+     * ⭐ Reporte de MOVIMIENTOS de inventario entre fechas.
+     * Muestra cada entrada/salida/ajuste con saldo y observación.
+     * Query param opcional `codArticulo` para filtrar por un artículo específico.
+     */
+    @GET
+    @Path("/movimientos-inventario/pdf/{fechaDesde}/{fechaHasta}")
+    @Produces("application/pdf")
+    @RolesAllowed({"admin", "lim"})
+    public Response generarReporteMovimientosInventarioPDF(
+            @PathParam("fechaDesde") String fechaDesde,
+            @PathParam("fechaHasta") String fechaHasta,
+            @QueryParam("codArticulo") String codArticulo) {
+        log.info("Generando PDF movimientos inventario: {} - {} (art: {})",
+                fechaDesde, fechaHasta, codArticulo);
+        byte[] pdfBytes = notaEntregaService.generarReporteMovimientosInventario(
+                LocalDate.parse(fechaDesde),
+                LocalDate.parse(fechaHasta),
+                codArticulo);
+        String suffix = (codArticulo != null && !codArticulo.isBlank())
+                ? "_" + codArticulo
+                : "";
+        return Response.ok(pdfBytes)
+                .header("Content-Disposition",
+                        "attachment; filename=\"movimientos_inventario" + suffix + ".pdf\"")
                 .build();
     }
 }

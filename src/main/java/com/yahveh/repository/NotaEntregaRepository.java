@@ -1,6 +1,8 @@
 package com.yahveh.repository;
 
+import com.yahveh.dto.ArticuloVendedorReporteDTO;
 import com.yahveh.dto.InventarioReporteDTO;
+import com.yahveh.dto.MovimientoInventarioReporteDTO;
 import com.yahveh.dto.NotaEntregaReporteDTO;
 import com.yahveh.dto.VendedorReporteDTO;
 import com.yahveh.dto.VentaReporteDTO;
@@ -441,8 +443,11 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
     }
 
 
-    public List<VendedorReporteDTO> obtenerReporteVendedores(LocalDate fechaDesde, LocalDate fechaHasta) {
-        String sql = "SELECT * FROM p_reporte_notas_vendedor(?, ?)";
+    public List<VendedorReporteDTO> obtenerReporteVendedores(
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            Integer codEmpleado) {
+        String sql = "SELECT * FROM p_reporte_notas_vendedor(?, ?, ?)";
 
         List<VendedorReporteDTO> result = new ArrayList<>();
 
@@ -451,14 +456,24 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
 
             stmt.setDate(1, java.sql.Date.valueOf(fechaDesde));
             stmt.setDate(2, java.sql.Date.valueOf(fechaHasta));
+            if (codEmpleado != null) {
+                stmt.setInt(3, codEmpleado);
+            } else {
+                stmt.setNull(3, java.sql.Types.BIGINT);
+            }
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
+                    long codEmp = rs.getLong("cod_empleado");
+                    Long codEmpVal = rs.wasNull() ? null : codEmp;
+
                     result.add(VendedorReporteDTO.builder()
+                            .codEmpleado(codEmpVal)
                             .nombreVendedor(rs.getString("nombre_vendedor"))
                             .fecha(rs.getDate("fecha") != null ? rs.getDate("fecha").toLocalDate() : null)
                             .codNotaEntrega(rs.getLong("cod_nota_entrega"))
                             .nombreCliente(rs.getString("nombre_cliente"))
+                            .nit(rs.getString("nit"))
                             .direccion(rs.getString("direccion"))
                             .zona(rs.getString("zona"))
                             .cantidadArticulos(rs.getInt("cantidad_articulos"))
@@ -469,6 +484,115 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
         } catch (SQLException e) {
             log.error("Error al obtener reporte de vendedores", e);
             throw new RuntimeException("Error al obtener reporte de vendedores: " + e.getMessage(), e);
+        }
+
+        return result;
+    }
+
+    /**
+     * Detalle de artículos vendidos por vendedor (opcionalmente filtrado por empleado).
+     * Se usa para el reporte de detalle de ventas por vendedor.
+     */
+    public List<ArticuloVendedorReporteDTO> obtenerArticulosPorVendedor(
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            Integer codEmpleado) {
+        String sql = "SELECT * FROM p_reporte_articulos_vendedor(?, ?, ?)";
+
+        List<ArticuloVendedorReporteDTO> result = new ArrayList<>();
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, java.sql.Date.valueOf(fechaDesde));
+            stmt.setDate(2, java.sql.Date.valueOf(fechaHasta));
+            if (codEmpleado != null) {
+                stmt.setInt(3, codEmpleado);
+            } else {
+                stmt.setNull(3, java.sql.Types.BIGINT);
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long codEmp = rs.getLong("cod_empleado");
+                    Long codEmpVal = rs.wasNull() ? null : codEmp;
+
+                    result.add(ArticuloVendedorReporteDTO.builder()
+                            .codEmpleado(codEmpVal)
+                            .nombreVendedor(rs.getString("nombre_vendedor"))
+                            .codNotaEntrega(rs.getLong("cod_nota_entrega"))
+                            .fecha(rs.getDate("fecha") != null
+                                    ? rs.getDate("fecha").toLocalDate() : null)
+                            .nombreCliente(rs.getString("nombre_cliente"))
+                            .nit(rs.getString("nit"))
+                            .direccion(rs.getString("direccion"))
+                            .zona(rs.getString("zona"))
+                            .codDetalle(rs.getLong("cod_detalle"))
+                            .codArticulo(rs.getString("cod_articulo"))
+                            .descripcionArticulo(rs.getString("descripcion_articulo"))
+                            .lineaArticulo(rs.getString("linea_articulo"))
+                            .cantidad(rs.getInt("cantidad"))
+                            .precioUnitario(rs.getBigDecimal("precio_unitario"))
+                            .descuento(rs.getBigDecimal("descuento"))
+                            .precioConDescuento(rs.getBigDecimal("precio_con_descuento"))
+                            .subtotal(rs.getBigDecimal("subtotal"))
+                            .build());
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error al obtener artículos por vendedor", e);
+            throw new RuntimeException("Error al obtener artículos por vendedor: " + e.getMessage(), e);
+        }
+
+        return result;
+    }
+
+    /**
+     * Obtiene el detalle de movimientos de inventario entre fechas.
+     * Opcionalmente filtrado por código de artículo.
+     */
+    public List<MovimientoInventarioReporteDTO> obtenerReporteMovimientos(
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            String codArticulo) {
+        String sql = "SELECT * FROM p_reporte_movimientos_inventario(?, ?, ?)";
+
+        List<MovimientoInventarioReporteDTO> result = new ArrayList<>();
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, java.sql.Date.valueOf(fechaDesde));
+            stmt.setDate(2, java.sql.Date.valueOf(fechaHasta));
+            if (codArticulo == null || codArticulo.isBlank()) {
+                stmt.setNull(3, java.sql.Types.VARCHAR);
+            } else {
+                stmt.setString(3, codArticulo.trim());
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    result.add(MovimientoInventarioReporteDTO.builder()
+                            .codInventario(rs.getLong("cod_inventario"))
+                            .fecha(rs.getDate("fecha") != null
+                                    ? rs.getDate("fecha").toLocalDate() : null)
+                            .codArticulo(rs.getString("cod_articulo"))
+                            .descripcionArticulo(rs.getString("descripcion_articulo"))
+                            .lineaArticulo(rs.getString("linea_articulo"))
+                            .tipoMovimiento(rs.getString("tipo_movimiento"))
+                            .cantidad(rs.getInt("cantidad"))
+                            .saldoAnterior(rs.getInt("saldo_anterior"))
+                            .saldoNuevo(rs.getInt("saldo_nuevo"))
+                            .precioUnitario(rs.getBigDecimal("precio_unitario"))
+                            .valorTotal(rs.getBigDecimal("valor_total"))
+                            .observacion(rs.getString("observacion"))
+                            .nombreUsuario(rs.getString("nombre_usuario"))
+                            .build());
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error al obtener reporte de movimientos de inventario", e);
+            throw new RuntimeException("Error al obtener reporte de movimientos: " + e.getMessage(), e);
         }
 
         return result;
