@@ -24,6 +24,7 @@ import java.util.Map;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed({"admin", "lim"})
+@com.yahveh.security.RequiereVista({"nota_entrega"})
 @Slf4j
 public class NotaEntregaResource {
 

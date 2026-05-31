@@ -372,7 +372,6 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                 .codEmpleado(codEmpleado)
                 .audUsuario(rs.getInt("aud_usuario"))
                 .nombreEmpleado(rs.getString("nombre_empleado"))
-                .audFecha(rs.getTimestamp("aud_fecha").toLocalDateTime())
                 .estado(rs.getInt("estado"))
                 .estadoTexto(rs.getString("estado_texto"))
                 .totalGeneral(rs.getBigDecimal("total_general"))

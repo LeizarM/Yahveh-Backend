@@ -19,6 +19,7 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Slf4j
+@com.yahveh.security.RequiereVista({"clientes", "nota_entrega"})
 public class TelefonoClienteResource {
 
     @Inject

@@ -20,6 +20,7 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed({"admin", "lim"})
+@com.yahveh.security.RequiereVista({"zona", "clientes", "nota_entrega", "ciudad"})
 public class ZonaResource {
 
     @Inject

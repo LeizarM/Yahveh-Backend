@@ -3,6 +3,7 @@ package com.yahveh.service;
 import com.yahveh.dto.response.VistaResponse;
 import com.yahveh.model.Vista;
 import com.yahveh.repository.VistaRepository;
+import com.yahveh.security.VistaPermissionService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,9 @@ public class VistaService {
 
     @Inject
     VistaRepository vistaRepository;
+
+    @Inject
+    VistaPermissionService vistaPermissionService;
 
     /**
      * Menú dinámico del usuario autenticado (solo vistas permitidas)
@@ -53,6 +57,8 @@ public class VistaService {
     public void actualizarVistasDeUsuario(long codUsuario, List<Long> codVistas) {
         log.info("Actualizando permisos del usuario {}: {} vistas", codUsuario, codVistas.size());
         vistaRepository.actualizarVistasDeUsuario(codUsuario, codVistas);
+        // Invalidar la caché de permisos para que el cambio aplique de inmediato
+        vistaPermissionService.invalidar(codUsuario);
     }
 
     private VistaResponse toResponse(Vista vista) {

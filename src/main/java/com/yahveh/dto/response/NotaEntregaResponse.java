@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -27,7 +26,6 @@ public class NotaEntregaResponse {
     private String estadoTexto;
     private int audUsuario;
     private String nombreEmpleado;
-    private LocalDateTime audFecha;
     private List<DetalleNotaEntregaResponse> detalles;
     private BigDecimal totalGeneral;
     private int totalArticulos;

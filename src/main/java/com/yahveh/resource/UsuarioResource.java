@@ -29,7 +29,7 @@ public class UsuarioResource {
     SecurityUtils securityUtils;
 
     @GET
-    @RolesAllowed({"admin", "lim"})
+    @RolesAllowed("admin")
     public Response listarUsuarios() {
         log.info("GET /api/usuarios - Usuario: {}", securityUtils.getCurrentUsername());
 
@@ -39,7 +39,7 @@ public class UsuarioResource {
 
     @GET
     @Path("/{id}")
-    @RolesAllowed({"admin", "lim"})
+    @RolesAllowed("admin")
     public Response buscarUsuario(@PathParam("id") int id) {
         log.info("GET /api/usuarios/{} - Usuario: {}", id, securityUtils.getCurrentUsername());
 
@@ -48,7 +48,7 @@ public class UsuarioResource {
     }
 
     @POST
-    @RolesAllowed({"admin", "lim"})
+    @RolesAllowed("admin")
     public Response crearUsuario(@Valid UsuarioRequest request) {
         int codUsuario = securityUtils.getCurrentUserId();
         log.info("POST /api/usuarios - Usuario: {} - Creando: {}", securityUtils.getCurrentUsername(), request.getLogin());
@@ -61,7 +61,7 @@ public class UsuarioResource {
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed({"admin", "lim"})
+    @RolesAllowed("admin")
     public Response actualizarUsuario(@PathParam("id") int id, @Valid UsuarioRequest request) {
         int codUsuario = securityUtils.getCurrentUserId();
         log.info("PUT /api/usuarios/{} - Usuario: {}", id, securityUtils.getCurrentUsername());
@@ -72,7 +72,7 @@ public class UsuarioResource {
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({"admin", "lim"})
+    @RolesAllowed("admin")
     public Response eliminarUsuario(@PathParam("id") int id) {
         int codUsuario = securityUtils.getCurrentUserId();
         log.info("DELETE /api/usuarios/{} - Usuario: {}", id, securityUtils.getCurrentUsername());

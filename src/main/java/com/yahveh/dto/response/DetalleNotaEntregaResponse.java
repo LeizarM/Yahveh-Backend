@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -27,5 +26,4 @@ public class DetalleNotaEntregaResponse {
     private float descuento;          // porcentaje (0-100), no es dinero
     private BigDecimal precioConDescuento;
     private int audUsuario;
-    private LocalDateTime audFecha;
 }

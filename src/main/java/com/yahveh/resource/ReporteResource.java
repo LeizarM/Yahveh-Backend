@@ -12,6 +12,7 @@ import java.time.LocalDate;
 
 @Path("/api/reportes")
 @Produces(MediaType.APPLICATION_JSON)
+@com.yahveh.security.RequiereVista({"reportes"})
 @Slf4j
 public class ReporteResource {
 
@@ -22,6 +23,7 @@ public class ReporteResource {
     @Path("/nota-entrega/{codNotaEntrega}")
     @Produces("application/pdf")
     @RolesAllowed({"admin", "lim"})
+    @com.yahveh.security.RequiereVista({"nota_entrega", "reportes"})
     public Response generarNotaEntregaPDF(@PathParam("codNotaEntrega") long codNotaEntrega) {
         log.info("Generando PDF de nota de entrega: {}", codNotaEntrega);
         byte[] pdfBytes = notaEntregaService.generarPDF(codNotaEntrega);

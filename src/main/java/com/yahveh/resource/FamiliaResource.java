@@ -20,6 +20,7 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed({"lim", "admin"})
+@com.yahveh.security.RequiereVista({"familia", "linea", "items"})
 public class FamiliaResource {
 
     @Inject
