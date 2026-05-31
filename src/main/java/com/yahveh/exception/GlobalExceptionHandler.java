@@ -1,6 +1,7 @@
 package com.yahveh.exception;
 
 import com.yahveh.dto.response.ApiResponse;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -12,6 +13,13 @@ public class GlobalExceptionHandler implements ExceptionMapper<Exception> {
 
     @Override
     public Response toResponse(Exception exception) {
+        // Si la excepción ya trae una Response propia (ej. 429 del rate limiter),
+        // respetarla en lugar de convertirla en 500.
+        if (exception instanceof WebApplicationException wae && wae.getResponse() != null
+                && wae.getResponse().getStatus() > 0) {
+            return wae.getResponse();
+        }
+
         log.error("Error capturado: ", exception);
 
         if (exception instanceof UnauthorizedException) {

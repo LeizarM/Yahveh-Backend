@@ -12,18 +12,18 @@
 	<field name="cantidad" class="java.lang.Integer"/>
 	<field name="lineaArticulo" class="java.lang.String"/>
 	<field name="productoCompleto" class="java.lang.String"/>
-	<field name="precioUnitario" class="java.lang.Float"/>
+	<field name="precioUnitario" class="java.math.BigDecimal"/>
 	<field name="descuento" class="java.lang.Float"/>
-	<field name="totalBsDesc" class="java.lang.Float"/>
-	<field name="totalGeneralBs" class="java.lang.Float"/>
+	<field name="totalBsDesc" class="java.math.BigDecimal"/>
+	<field name="totalGeneralBs" class="java.math.BigDecimal"/>
 	<field name="tipoFila" class="java.lang.String"/>
 	<variable name="sumaCantidad" class="java.lang.Integer" calculation="Sum">
 		<variableExpression><![CDATA[$F{cantidad}]]></variableExpression>
 	</variable>
-	<variable name="sumaTotalBsDesc" class="java.lang.Float" calculation="Sum">
+	<variable name="sumaTotalBsDesc" class="java.math.BigDecimal" calculation="Sum">
 		<variableExpression><![CDATA[$F{totalBsDesc}]]></variableExpression>
 	</variable>
-	<variable name="sumaTotalGeneral" class="java.lang.Float" calculation="Sum">
+	<variable name="sumaTotalGeneral" class="java.math.BigDecimal" calculation="Sum">
 		<variableExpression><![CDATA[$F{totalGeneralBs}]]></variableExpression>
 	</variable>
 	<group name="reporteGroup">

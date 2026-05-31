@@ -17,18 +17,25 @@ public class JwtService {
     String issuer;
 
     public String generateToken(Long codUsuario, String login, String tipoUsuario) {
+        // Normalizar el rol: el sistema solo maneja 'admin' y 'lim'.
+        // Cualquier variante (mayúsculas, espacios) se normaliza y 'user' se mapea a 'lim'.
+        String rol = tipoUsuario == null ? "" : tipoUsuario.trim().toLowerCase();
+        if (rol.equals("user")) {
+            rol = "lim";
+        }
+
         Set<String> roles = new HashSet<>();
-        roles.add(tipoUsuario); // ADMIN, VENDEDOR, etc.
+        roles.add(rol); // admin | lim
 
         String token = Jwt.issuer(issuer)
                 .upn(login)
                 .groups(roles)
                 .claim("codUsuario", codUsuario)
-                .claim("tipoUsuario", tipoUsuario)
+                .claim("tipoUsuario", rol)
                 .expiresIn(Duration.ofHours(8))
                 .sign();
 
-        log.info("Token generado para usuario: {} ({})", login, tipoUsuario);
+        log.info("Token generado para usuario: {} (rol: {})", login, rol);
         return token;
     }
 }

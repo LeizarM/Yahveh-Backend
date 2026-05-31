@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,10 +18,10 @@ public class DetalleNotaEntrega {
     private String lineaArticulo;
     private int codLinea;
     private int cantidad;
-    private float precioUnitario;
-    private float precioTotal;
-    private float precioSinFactura;
-    private float descuento;
-    private float precioConDescuento;
+    private BigDecimal precioUnitario;
+    private BigDecimal precioTotal;
+    private BigDecimal precioSinFactura;
+    private float descuento;          // porcentaje (0-100), no es dinero
+    private BigDecimal precioConDescuento;
     private int audUsuario;
 }

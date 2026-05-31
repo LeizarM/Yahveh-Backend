@@ -6,6 +6,7 @@ import com.yahveh.model.DetalleNotaEntrega;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -48,7 +49,7 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
      * Crear nuevo detalle
      */
     public int crearDetalle(int codNotaEntrega, String codArticulo, int cantidad,
-                             float precioUnitario, float precioSinFactura, float descuento, int audUsuario) {
+                             BigDecimal precioUnitario, BigDecimal precioSinFactura, float descuento, int audUsuario) {
         String sql = "SELECT p_error, p_errormsg, p_result " +
                 "FROM p_abm_detalle_nota_entrega(" +
                 "p_codnotaentrega := ?, " +
@@ -83,8 +84,8 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
     /**
      * Actualizar detalle
      */
-    public void actualizarDetalle(int codDetalle, int cantidad, float precioUnitario,
-                                  float precioSinFactura, float descuento, int audUsuario) {
+    public void actualizarDetalle(int codDetalle, int cantidad, BigDecimal precioUnitario,
+                                  BigDecimal precioSinFactura, float descuento, int audUsuario) {
         String sql = "SELECT p_error, p_errormsg, p_result " +
                 "FROM p_abm_detalle_nota_entrega(" +
                 "p_coddetalle := ?, " +
@@ -146,11 +147,11 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
                 .lineaArticulo(rs.getString("linea_articulo"))
                 .codLinea(rs.getInt("cod_linea"))
                 .cantidad(rs.getInt("cantidad"))
-                .precioUnitario(rs.getFloat("precio_unitario"))
-                .precioTotal(rs.getFloat("precio_total"))
-                .precioSinFactura(rs.getFloat("precio_sin_factura"))
+                .precioUnitario(safeGetBigDecimal(rs, "precio_unitario"))
+                .precioTotal(safeGetBigDecimal(rs, "precio_total"))
+                .precioSinFactura(safeGetBigDecimal(rs, "precio_sin_factura"))
                 .descuento(safeGetFloat(rs, "descuento"))
-                .precioConDescuento(safeGetFloat(rs, "precio_con_descuento"))
+                .precioConDescuento(safeGetBigDecimal(rs, "precio_con_descuento"))
                 .audUsuario(rs.getInt("aud_usuario"))
                 .build();
     }
@@ -161,6 +162,15 @@ public class DetalleNotaEntregaRepository extends BaseRepository<DetalleNotaEntr
             return rs.wasNull() ? 0f : val;
         } catch (SQLException e) {
             return 0f;
+        }
+    }
+
+    private BigDecimal safeGetBigDecimal(ResultSet rs, String column) {
+        try {
+            BigDecimal val = rs.getBigDecimal(column);
+            return val != null ? val : BigDecimal.ZERO;
+        } catch (SQLException e) {
+            return BigDecimal.ZERO;
         }
     }
 

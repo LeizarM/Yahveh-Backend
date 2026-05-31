@@ -7,6 +7,7 @@ import com.yahveh.model.Articulo;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -265,8 +266,8 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
                 .descripcion(rs.getString("descripcion"))
                 .descripcion2(rs.getString("descripcion2"))
                 .stockActual(rs.getInt("total_stock"))
-                .precioActual(rs.getDouble("precio_actual"))
-                .precioSinFactura(safeGetDouble(rs, "precio_sin_factura"))
+                .precioActual(safeGetBigDecimal(rs, "precio_actual"))
+                .precioSinFactura(safeGetBigDecimal(rs, "precio_sin_factura"))
                 .audUsuario(rs.getInt("aud_usuario"))
                 .rowNumber(safeGetLong(rs, "row_number"))
                 .build();
@@ -281,12 +282,12 @@ public class ArticuloRepository extends BaseRepository<Articulo> {
         }
     }
 
-    private double safeGetDouble(ResultSet rs, String column) {
+    private BigDecimal safeGetBigDecimal(ResultSet rs, String column) {
         try {
-            double val = rs.getDouble(column);
-            return rs.wasNull() ? 0.0 : val;
+            BigDecimal val = rs.getBigDecimal(column);
+            return val != null ? val : BigDecimal.ZERO;
         } catch (SQLException e) {
-            return 0.0;
+            return BigDecimal.ZERO;
         }
     }
 

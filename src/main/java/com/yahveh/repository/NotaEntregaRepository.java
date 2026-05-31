@@ -13,6 +13,8 @@ import com.yahveh.model.NotaEntrega;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -373,7 +375,7 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                 .audFecha(rs.getTimestamp("aud_fecha").toLocalDateTime())
                 .estado(rs.getInt("estado"))
                 .estadoTexto(rs.getString("estado_texto"))
-                .totalGeneral(rs.getFloat("total_general"))
+                .totalGeneral(rs.getBigDecimal("total_general"))
                 .totalArticulos(rs.getInt("total_articulos"))
                 .build();
     }
@@ -417,13 +419,13 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                             .cantidad(rs.getObject("cantidad") != null ? rs.getInt("cantidad") : null)
                             .lineaArticulo(rs.getString("linea_articulo"))
                             .productoCompleto(rs.getString("producto_completo"))
-                            .precioUnitario(rs.getObject("precio_unitario") != null ? rs.getFloat("precio_unitario") : null)
+                            .precioUnitario(rs.getBigDecimal("precio_unitario"))
                             .descuento(rs.getObject("descuento") != null ? rs.getFloat("descuento") : null)
-                            .totalBs(rs.getObject("total_bs") != null ? rs.getFloat("total_bs") : null)
-                            .descBs(rs.getObject("desc_bs") != null ? rs.getFloat("desc_bs") : null)
-                            .bsUnitario(rs.getObject("bs_unitario") != null ? rs.getFloat("bs_unitario") : null)
-                            .totalBsDesc(rs.getObject("total_bs_desc") != null ? rs.getFloat("total_bs_desc") : null)
-                            .totalGeneralBs(rs.getObject("total_general_bs") != null ? rs.getFloat("total_general_bs") : null)
+                            .totalBs(rs.getBigDecimal("total_bs"))
+                            .descBs(rs.getBigDecimal("desc_bs"))
+                            .bsUnitario(rs.getBigDecimal("bs_unitario"))
+                            .totalBsDesc(rs.getBigDecimal("total_bs_desc"))
+                            .totalGeneralBs(rs.getBigDecimal("total_general_bs"))
                             .tipoFila(tipoFila)
                             .build();
 
@@ -477,7 +479,7 @@ public class NotaEntregaRepository extends BaseRepository<NotaEntrega> {
                             .direccion(rs.getString("direccion"))
                             .zona(rs.getString("zona"))
                             .cantidadArticulos(rs.getInt("cantidad_articulos"))
-                            .totalBs(rs.getFloat("total_bs"))
+                            .totalBs(rs.getBigDecimal("total_bs"))
                             .build());
                 }
             }

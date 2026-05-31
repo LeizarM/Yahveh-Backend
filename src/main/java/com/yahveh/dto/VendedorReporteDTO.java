@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -21,5 +22,5 @@ public class VendedorReporteDTO {
     private String direccion;
     private String zona;
     private Integer cantidadArticulos;
-    private Float totalBs;
+    private BigDecimal totalBs;
 }

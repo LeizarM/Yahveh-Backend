@@ -6,6 +6,7 @@ import com.yahveh.model.PrecioArticulo;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -201,9 +202,9 @@ public class PrecioArticuloRepository extends BaseRepository<PrecioArticulo> {
                 .descripcionArticulo(rs.getString(3))
                 .linea(rs.getString(4))
                 .listaPrecio(rs.getInt(5))
-                .precioBase(rs.getFloat(6))
-                .precio(rs.getFloat(7))
-                .precioSinFactura(rs.getFloat(8))
+                .precioBase(rs.getBigDecimal(6))
+                .precio(rs.getBigDecimal(7))
+                .precioSinFactura(rs.getBigDecimal(8))
                 //.fechaRegistro(rs.getTimestamp("fecha_registro").toLocalDateTime())
                 .build();
     }

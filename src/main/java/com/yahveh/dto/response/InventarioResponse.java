@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -20,8 +21,8 @@ public class InventarioResponse {
     private int cantidad;
     private int saldoAnterior;
     private int saldoNuevo;
-    private float precioUnitario;
-    private float valorTotal;
+    private BigDecimal precioUnitario;
+    private BigDecimal valorTotal;
     private LocalDate fecha;
     private String observacion;
     private String codImportacion;

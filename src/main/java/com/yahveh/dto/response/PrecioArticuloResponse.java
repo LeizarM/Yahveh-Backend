@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -20,8 +21,8 @@ public class PrecioArticuloResponse {
     private String descripcionArticulo;
     private String linea;
     private int listaPrecio;
-    private float precioBase;
-    private float precio;
-    private float precioSinFactura;
+    private BigDecimal precioBase;
+    private BigDecimal precio;
+    private BigDecimal precioSinFactura;
 
 }

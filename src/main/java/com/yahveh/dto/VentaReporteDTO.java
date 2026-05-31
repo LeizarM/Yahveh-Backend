@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -30,13 +31,13 @@ public class VentaReporteDTO {
     private String productoCompleto;
 
     // Precios y cálculos
-    private Float precioUnitario;
-    private Float descuento;
-    private Float totalBs;
-    private Float descBs;
-    private Float bsUnitario;
-    private Float totalBsDesc;
-    private Float totalGeneralBs;
+    private BigDecimal precioUnitario;
+    private Float descuento;          // porcentaje (0-100), no es dinero
+    private BigDecimal totalBs;
+    private BigDecimal descBs;
+    private BigDecimal bsUnitario;
+    private BigDecimal totalBsDesc;
+    private BigDecimal totalGeneralBs;
 
     // Campo para identificar la fila de totales
     private String tipoFila; // "DETALLE" o "TOTAL"

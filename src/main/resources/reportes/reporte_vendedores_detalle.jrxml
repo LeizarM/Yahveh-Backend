@@ -18,18 +18,18 @@
   <field name="direccion" class="java.lang.String"/>
   <field name="zona" class="java.lang.String"/>
   <field name="cantidadArticulos" class="java.lang.Integer"/>
-  <field name="totalBs" class="java.lang.Float"/>
+  <field name="totalBs" class="java.math.BigDecimal"/>
 
   <variable name="countNotasGrupo" class="java.lang.Integer" resetType="Group" resetGroup="vendedor" calculation="Count">
     <variableExpression><![CDATA[$F{codNotaEntrega}]]></variableExpression>
   </variable>
-  <variable name="sumTotalGrupo" class="java.lang.Float" resetType="Group" resetGroup="vendedor" calculation="Sum">
+  <variable name="sumTotalGrupo" class="java.math.BigDecimal" resetType="Group" resetGroup="vendedor" calculation="Sum">
     <variableExpression><![CDATA[$F{totalBs}]]></variableExpression>
   </variable>
   <variable name="countTotalGeneral" class="java.lang.Integer" calculation="Count">
     <variableExpression><![CDATA[$F{codNotaEntrega}]]></variableExpression>
   </variable>
-  <variable name="sumTotalGeneral" class="java.lang.Float" calculation="Sum">
+  <variable name="sumTotalGeneral" class="java.math.BigDecimal" calculation="Sum">
     <variableExpression><![CDATA[$F{totalBs}]]></variableExpression>
   </variable>
 

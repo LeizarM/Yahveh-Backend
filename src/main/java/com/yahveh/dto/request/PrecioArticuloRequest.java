@@ -24,13 +24,13 @@ public class PrecioArticuloRequest {
 
     @NotNull(message = "El precio base es obligatorio")
     @DecimalMin(value = "0.0", message = "El precio base debe ser mayor o igual a 0")
-    private float precioBase;
+    private BigDecimal precioBase;
 
     @NotNull(message = "El precio es obligatorio")
     @DecimalMin(value = "0.0", message = "El precio debe ser mayor o igual a 0")
-    private float precio;
+    private BigDecimal precio;
 
     @NotNull(message = "El precio sin factura es obligatorio")
     @DecimalMin(value = "0.0", message = "El precio sin factura debe ser mayor o igual a 0")
-    private float precioSinFactura;
+    private BigDecimal precioSinFactura;
 }

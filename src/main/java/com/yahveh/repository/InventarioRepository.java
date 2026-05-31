@@ -7,6 +7,7 @@ import com.yahveh.model.Inventario;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -74,7 +75,7 @@ public class InventarioRepository extends BaseRepository<Inventario> {
      * Crear nuevo movimiento de inventario
      */
     public long crearMovimiento(String codArticulo, String tipoMovimiento, int cantidad,
-                                float precioUnitario, LocalDate fecha, String observacion,
+                                BigDecimal precioUnitario, LocalDate fecha, String observacion,
                                 String codImportacion, int audUsuario) {
         String sql = "SELECT p_error, p_errormsg, p_result " +
                 "FROM p_abm_inventario(" +
@@ -171,8 +172,8 @@ public class InventarioRepository extends BaseRepository<Inventario> {
         response.setCantidad(rs.getInt(7));
         response.setSaldoAnterior(rs.getInt(8));
         response.setSaldoNuevo(rs.getInt(9));
-        response.setPrecioUnitario(rs.getFloat(10));
-        response.setValorTotal(rs.getFloat(11));
+        response.setPrecioUnitario(rs.getBigDecimal(10));
+        response.setValorTotal(rs.getBigDecimal(11));
 
         // Manejar fecha
         java.sql.Date fecha = rs.getDate("fecha");

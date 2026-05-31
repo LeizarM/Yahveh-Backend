@@ -15,8 +15,8 @@ public class PrecioArticulo {
     private int codPrecio;
     private String codArticulo;
     private Integer listaPrecio;
-    private float precioBase;
-    private float precio;
-    private float precioSinFactura;
+    private BigDecimal precioBase;
+    private BigDecimal precio;
+    private BigDecimal precioSinFactura;
     private int audUsuario;  // ✅ Cambiar a Long para coincidir con BIGINT
 }

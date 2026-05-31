@@ -12,10 +12,34 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
 @Slf4j
 public class ReporteService {
+
+    /**
+     * Cache de reportes ya compilados (.jrxml -> JasperReport).
+     * Evita recompilar el mismo reporte en cada request (operación costosa).
+     */
+    private final ConcurrentHashMap<String, JasperReport> reportCache = new ConcurrentHashMap<>();
+
+    /**
+     * Devuelve el reporte compilado, compilándolo una sola vez y cacheándolo.
+     */
+    private JasperReport getCompiledReport(String nombreReporte) {
+        return reportCache.computeIfAbsent(nombreReporte, nombre -> {
+            try (InputStream reportStream = getClass().getResourceAsStream("/reportes/" + nombre + ".jrxml")) {
+                if (reportStream == null) {
+                    throw new RuntimeException("No se encontró el archivo de reporte: " + nombre + ".jrxml");
+                }
+                log.info("Compilando reporte (primera vez): {}", nombre);
+                return JasperCompileManager.compileReport(reportStream);
+            } catch (Exception e) {
+                throw new RuntimeException("Error al compilar reporte " + nombre + ": " + e.getMessage(), e);
+            }
+        });
+    }
 
     /**
      * Generar reporte en PDF
@@ -33,14 +57,8 @@ public class ReporteService {
         try {
             log.info("Generando PDF simple para reporte: {}", nombreReporte);
 
-            // Cargar el archivo JRXML
-            InputStream reportStream = getClass().getResourceAsStream("/reportes/" + nombreReporte + ".jrxml");
-            if (reportStream == null) {
-                throw new RuntimeException("No se encontró el archivo de reporte: " + nombreReporte + ".jrxml");
-            }
-
-            // Compilar el reporte
-            JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+            // Obtener el reporte compilado desde el cache (se compila solo la primera vez)
+            JasperReport jasperReport = getCompiledReport(nombreReporte);
 
             // Crear el datasource con los datos
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(datos);
